@@ -20,7 +20,7 @@ a fixture, a product. Not a CAD tool: one parametric model of the whole device, 
 ## Install (macOS, Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nkvch/design-engineer/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/aimsolve/design-engineer/main/install.sh | sh
 ```
 
 It installs [uv](https://docs.astral.sh/uv/) if missing, the Python 3.12 environment of the core (build123d and friends, ~1 GB,

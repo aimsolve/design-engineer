@@ -1,13 +1,13 @@
 #!/bin/sh
 # The design engineer (design-engineer plugin) for Claude Code, in one command:
-#   curl -fsSL https://raw.githubusercontent.com/nkvch/design-engineer/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/aimsolve/design-engineer/main/install.sh | sh
 #   sh install.sh [--no-claude] [--extras sim,fea,render,electronics]   (from a checkout: installs its current commit)
 # Works from the plugin folder of this repo (agent/) and from the root of a repo that is only the plugin.
 # What it does: uv (if missing), the Python environment of the core (build123d & co, ~1 GB, once), `de` in ~/.local/bin, and the
 # Claude Code plugin (marketplace + install). --no-claude skips the plugin. Nothing needs a key; Telegram / GitHub / the router
 # are separate modules, off.
 set -eu
-REPO=${DE_REPO:-https://github.com/nkvch/design-engineer.git}
+REPO=${DE_REPO:-https://github.com/aimsolve/design-engineer.git}
 CLAUDE=1
 EXTRAS=
 CC=${CLAUDE_BIN:-claude}   # the Claude Code CLI
