@@ -35,7 +35,7 @@ def mb(n: int) -> str:
 
 RUNTIME = HERE.parents[2] / "virtual-controllers" / "runtime"
 BROWSER_RUNTIME = ["index.mjs", "sim.mjs", "devices.mjs", "vm.mjs", "chips.mjs", "device.mjs", "device_i18n.mjs"]   # node.mjs is node-only, never shipped
-VIEWER_CODE = ["view_fx.js", "win.mjs", "feedback.mjs", "kit.mjs", "flash.mjs", "hw.mjs", "motion.mjs", "sim_ui.mjs", "app_panel.mjs", "device_ui.mjs", "i18n.mjs"]   # what /_viewer/ serves besides index.html, vendor/, vc/
+VIEWER_CODE = ["view_fx.js", "win.mjs", "feedback.mjs", "kit.mjs", "flash.mjs", "hw.mjs", "motion.mjs", "sim_ui.mjs", "app_panel.mjs", "device_ui.mjs", "wires.mjs", "i18n.mjs"]   # what /_viewer/ serves besides index.html, vendor/, vc/
 
 
 def make_writable(root: Path) -> None:
@@ -249,6 +249,42 @@ def clearance_report(cat, cyc, tracks=None):
     return rep
 
 
+def harness_report(cat, cyc):
+    """The wires routed inside a code model (machine-project harness.py: ports with locations, routes through waypoints) as
+    the page draws them, checked against the parts - moving ones over the cycle this build publishes - or None when the
+    model routes no wire. Like the overlap check it never stops the build: check.py rule «harness» reads its report."""
+    root = Path.cwd()
+    if not (root / "build/model/parts.json").is_file():
+        return None
+    sys.path.insert(0, str(HERE.parents[2] / "machine-project" / "scripts"))
+    try:
+        import harness
+        groups = {str(p["id"]): p["motion_group"] for p in cat["parts"] if p.get("id") and p.get("motion_group")}
+        rep = harness.run(root, (cyc or {}).get("cycle"), groups)
+    except Exception as e:   # noqa: BLE001 - never stops publishing; check.py and the router say it did not run
+        try:
+            located = any(isinstance(p, dict) and p.get("ports_at")
+                          for p in json.loads((root / "build/model/parts.json").read_text(encoding="utf-8")).get("parts") or [])
+        except (OSError, ValueError, AttributeError):
+            located = False
+        if not located:   # a model that locates no port routes no wire: nothing of wires on its page (rule «schemes» reports connections.py)
+            return None
+        why = f"{type(e).__name__}: {e}"[:300]
+        print(f"WARN  wires (harness) not checked: {why}", file=sys.stderr, flush=True)
+        f = root / "build/harness/report.json"   # never yesterday's verdict on today's model: the error is the verdict
+        f.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            inputs = harness.inputs(root)
+        except Exception:   # noqa: BLE001 - harness.py itself did not load
+            inputs = None
+        f.write_text(json.dumps({"inputs": inputs, "error": why, "wires": [], "problems": []}), encoding="utf-8")
+        return {"wires": [], "problems": [f"the wires check did not run: {why}"]}
+    if rep is None:
+        return None
+    print("\n".join(harness.lines(rep)), flush=True)
+    return harness.site(rep)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="src", required=True, help="importer output dir (model.glb, parts.json, parts/)")
@@ -301,6 +337,7 @@ def main() -> int:
             print(f"WARN  clearance: world data not read, links checked without their pose tracks: {e}", file=sys.stderr)
             tracks = None
     clr = clearance_report(cat, cyc, tracks)
+    wires = harness_report(cat, cyc)
     if out.exists():
         remove_tree(out)
     out.mkdir(parents=True)
@@ -321,7 +358,9 @@ def main() -> int:
                                                         "unmeasured_n": len(clr["unmeasured"]), "cycle": clr["cycle"],
                                                         **({"error": clr["error"]} if clr.get("error") else {})},
                                                        ensure_ascii=False), encoding="utf-8")
-    layers = {**({"sim": "sim/config.json"} if a.sim else {}), **({"edges": "edges.json"} if has_edges else {}), **({"cycle": "motion.json"} if cyc else {}),
+    if wires is not None:
+        (out / "wires.json").write_text(json.dumps(wires, ensure_ascii=False), encoding="utf-8")
+    layers = {**({"sim": "sim/config.json"} if a.sim else {}), **({"wires": "wires.json"} if wires is not None else {}), **({"edges": "edges.json"} if has_edges else {}), **({"cycle": "motion.json"} if cyc else {}),
               **({"clearance": "clearance.json"} if clr is not None else {})}
     stamp = f"{time.time_ns() // 1000:x}"   # cache-busts every data URL of this build (in-app browsers cache hard: a client once kept seeing a stale model)
     (out / "config.json").write_text(json.dumps({"up": a.up, "title": title, "v": stamp, **layers, **({"links": links} if links else {}), **({"world": world} if world else {}), **({"feedback": a.feedback} if a.feedback != "none" else {}), **({"kit": a.kit} if a.kit != "none" else {}), **({"flash": True} if a.flash else {})}, ensure_ascii=False), encoding="utf-8")

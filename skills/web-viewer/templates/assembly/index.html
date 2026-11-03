@@ -1282,6 +1282,19 @@ async function initCycle() {
 }
 initCycle();
 
+// Wires inside the machine (machine-project harness.py): only when the site was built with routed wires (config.json `wires`).
+async function initWires() {
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (!api.config || !api.config.wires) return;
+  try {
+    const mod = await import("/_viewer/wires.js");
+    while (!api.ready && !api.error) await new Promise((r) => setTimeout(r, 50));
+    if (api.error) return;
+    await mod.mountWires({ api, L, file: dataUrl(api.config.wires) });
+  } catch (err) { console.error(err); api.wiresError = String(err && err.stack || err); }
+}
+initWires();
+
 // Visual feedback (draw on the frame + comment -> POST): only when config.json has `feedback` (build.py --feedback URL).
 async function initFeedback() {
   while (!api.ready && !api.error) await new Promise((r) => setTimeout(r, 50));

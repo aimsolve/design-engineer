@@ -228,6 +228,8 @@ def d_bought(parts, cache, out, model_parts=()):
                       row's `buy_length`, mm) summed x buy_margin (1.2), rounded up; the name says the modelled length
       cut: {stock, note, label, total, code?, class?, all_total?}   any part: a piece of a cut list (profile, tube), one row per
                       piece length, a total per stock in metres, one more total per all_total; a bought part with cut has no own row
+      the wires routed in 3D (harness.py: ports with ports_at, WIRES / WAYPOINTS of connections.py): a cut list per wire spec,
+                      one row per cut length naming its wires, a total per spec in metres (kind electrical)
       screws_from_holes: {name, code, supplier, class, kind, unit, margin}   on a row-only part: screws counted from the model's
                       holes (_screws), rows from this template ({n} = 2 / 3, {L} = length); the part itself makes no row
       verified        the part's check against the maker's drawing or STEP (fit_checks.py) is carried into the row, and a
@@ -275,6 +277,9 @@ def d_bought(parts, cache, out, model_parts=()):
         sys.exit(f"[derive] cut list pieces without a modelled shape (the length comes from it): {bad}")
     for r in _cut_rows([p for p in model_parts if p.get("cut")], cache):
         add(r, r.pop("nodes"))
+    if model_parts:
+        for r in _wire_rows():
+            add(r, r.pop("nodes"))
     tpl = next((p["screws_from_holes"] for p in model_parts if p.get("screws_from_holes")), None)
     if tpl:
         for (n, L), count in sorted(_screws(model_parts, cache).items()):
@@ -414,6 +419,43 @@ def _screws(model_parts, cache):
             for n, L, c in p.get("screws_unpaired") or []:
                 count[(n, L)] = count.get((n, L), 0) + c
     return count
+
+
+def _wire_rows():
+    """The cut list of the wires routed in 3D (harness.py routes(): the cut length of each wire, slack and ends included),
+    spec by spec in WIRES order: the lengths longest first, then the spec's total. A wiring that does not load gives no rows
+    (check.py says why)."""
+    import importlib.util
+    try:
+        harness = sys.modules.get("_mp_harness")
+        if harness is None:   # by path: never a project's harness.py
+            spec = importlib.util.spec_from_file_location("_mp_harness", HERE / "harness.py")
+            harness = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(harness)
+            sys.modules["_mp_harness"] = harness
+        parts, conns = harness.load(ROOT)
+        wires, _ = harness.routes(parts or [], conns or {}) if parts and harness.has_routes(parts, conns) else ([], [])
+    except Exception as e:   # noqa: BLE001 - the purchase list stays; check.py rule «harness» says what is wrong
+        print(f"[derive] bought: wires not listed: {type(e).__name__}: {e}", flush=True)
+        return []
+    stocks = {}
+    for w in wires:
+        if w.get("unrouted"):
+            continue
+        wire = (conns.get("WIRES") or [])[int(w["id"][1:]) - 1]
+        st = stocks.setdefault((wire.get("stock") or T.t("bought.wire_stock", LANG, spec=w["spec"] or f'Ø {w["od_mm"]:g} mm'),
+                                str(wire.get("code") or "")), {})
+        st.setdefault(w["cut_mm"], []).append(f'{w["id"]} {w["net"]}'.strip())
+    out = []
+    for (stock, code), lens in stocks.items():
+        base = {"unit": T.t("unit.pcs_cut", LANG), "supplier": "", "link": "", "kind": "electrical", "class": "", "code": code,
+                "note": "", "nodes": set()}
+        for L in sorted(lens, reverse=True):
+            out.append(dict(base, name=T.t("bought.wire_piece", LANG, stock=stock, length=L, labels="; ".join(lens[L])),
+                            qty=len(lens[L])))
+        out.append(dict(base, name=T.t("bought.wire_total", LANG, stock=stock, count=sum(map(len, lens.values()))),
+                        qty=round(sum(L * len(v) for L, v in lens.items()) / 1000, 3), unit=T.t("unit.m", LANG)))
+    return out
 
 
 def _cut_rows(cut_parts, cache):

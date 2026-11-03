@@ -8,7 +8,8 @@
 Rules: layout; nothing generated would be committed; nothing over 20 MB would be committed; screenshots only in build/ or outbox/;
 AAS present, structurally sound and schema-valid (+ round trip when build/<machine>.aasx exists); wiki names model fields instead of bare
 numbers (WARN); firmware folders are PlatformIO projects; model gates (cad_gates.py: CAD layout, kit.json,
-bought kind, single-process kits); machine schemes (schemes.py: wires / hoses of the model both ways, no PDF links on the page); model fits (fit_checks.py: screw in its hole, docked pairs, bought = drawn,
+bought kind, single-process kits); machine schemes (schemes.py: wires / hoses of the model both ways, no PDF links on the page);
+wires in 3D (harness.py: routes, bundles clear of the parts and through the gaps, bend radii, not stretched over the cycle); model fits (fit_checks.py: screw in its hole, docked pairs, bought = drawn,
 the maker's drawing on record, the list's thread pairs); KB lint of wiki/ (sizes, raw files, stale/orphan pages; reported as WARN in a
 normal run so the exit code is unchanged); wiki/index.md regenerated from page frontmatter on every run. "Would be committed" = git-tracked + untracked-not-ignored files, computed
 with git even when the platform keeps the git dir outside the project. Plain python3; the schema validator runs through `uv run --python 3.12`."""
@@ -33,6 +34,7 @@ import cad_gates  # noqa: E402
 import fit_checks  # noqa: E402
 import schemes  # noqa: E402
 import device  # noqa: E402
+import harness  # noqa: E402
 import rules_i18n as R  # noqa: E402
 import words_i18n as W  # noqa: E402
 
@@ -216,6 +218,9 @@ def check(root, do_validate=True, write_index=True):
         rec(st, rule, detail)
     # 6a''. the virtual device: sim parts wired to their MCU board (device.py)
     for st, rule, detail in device.gate(root):
+        rec(st, rule, detail)
+    # 6a'''. wires in 3D: routes through their waypoints, bundles clear of the parts and through the gaps, bends, motion (harness.py)
+    for st, rule, detail in harness.gate(root):
         rec(st, rule, detail)
     # 6b. the model's fits: screw in its hole, docked pairs, bought = drawn (fit_checks.py). The geometric
     # rules read the part STEPs, so a full run computes them (and stores build/model/fit.json) while the router's

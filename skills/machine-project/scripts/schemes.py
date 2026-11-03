@@ -15,7 +15,8 @@ The model holds everything:
 
   python schemes.py KIND MANIFEST      (the router's kit unit of the button; cwd = project root; the router builds the model first)
 draws build/kit/schemes/<kind>.pdf (the scheme as a drawing, scheme_draw.py: the electric one in symbols and blocks with every wire a
-line, the pneumatic one in ISO 1219 symbols, laid out by ELK; then the connection table) and <kind>.svg (the drawing sheets alone, for
+line, the pneumatic one in ISO 1219 symbols, laid out by ELK; then the connection table; the electric one then the harness
+drawing when the model routes wires in 3D, harness_draw.py) and <kind>.svg (the drawing sheets alone, for
 the model page), and writes MANIFEST {"scheme", "svg", "sheets", "elements", "connections"}.
 A kind without connections: {"scheme": null} (the button says the project has none). Bad data: exit 1, no manifest.
 Last log line: [schemes] <kind>: elements E, connections C, sheets N -> <pdf>
@@ -43,15 +44,17 @@ MARK = {'electric': 'W', 'pneumatic': 'H'}
 LOADER = """import json, runpy, sys
 sys.path.insert(0, 'mechanics/cad')
 g = runpy.run_path('mechanics/cad/connections.py')
-print(json.dumps({**{k: g.get(k, []) for k in ('WIRES', 'HOSES')}, 'SIM': g.get('SIM') or {}}, ensure_ascii=False, default=str))
+print(json.dumps({**{k: g.get(k, []) for k in ('WIRES', 'HOSES')}, **{k: g.get(k) or {} for k in ('SIM', 'WAYPOINTS', 'HARNESS')}},
+                 ensure_ascii=False, default=str))
 """
 
 
 # ---------------------------------------------------------------- the model
 
 def load_connections(root, python=sys.executable, timeout=60):
-    """{"WIRES": [...], "HOSES": [...], "SIM": {...}} from connections.py, run in a subprocess (it is project code). Raises ValueError.
-    SIM = per-placement settings of the virtual device (device.py)."""
+    """{"WIRES": [...], "HOSES": [...], "SIM": {...}, "WAYPOINTS": {...}, "HARNESS": {...}} from connections.py, run in a
+    subprocess (it is project code). Raises ValueError. SIM = per-placement settings of the virtual device (device.py);
+    WAYPOINTS / HARNESS = the wires' routes in 3D (harness.py)."""
     try:
         r = subprocess.run([python, '-c', LOADER], cwd=root, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -255,15 +258,15 @@ def _table(kind, conns, title, lang=None):
     return [sheet(i) for i in range(0, len(conns), per)]
 
 
-def draw(kind, parts, conns, title, pdf, svg, other=(), lang=None):
-    """The drawing sheets (scheme_draw.py), then the connection table, into the PDF; the drawing sheets alone into the SVG the
-    model page shows. lang: the texts on the sheets (default: the project's, text_i18n.project_lang). -> (element names,
-    sheet count)"""
+def draw(kind, parts, conns, title, pdf, svg, other=(), lang=None, harness=()):
+    """The drawing sheets (scheme_draw.py), then the connection table, then `harness` (sheet makers of harness_draw.py), into
+    the PDF; the drawing sheets alone into the SVG the model page shows. lang: the texts on the sheets (default: the project's,
+    text_i18n.project_lang). -> (element names, sheet count)"""
     import scheme_draw
     import text_i18n as T
     lang = lang or T.project_lang('.')
     pages = scheme_draw.pages(kind, parts, conns, other, title, lang)
-    tables = _table(kind, conns, title, lang)
+    tables = _table(kind, conns, title, lang) + list(harness)
     Path(pdf).parent.mkdir(parents=True, exist_ok=True)
     parts_ = [Path(str(pdf) + '.part'), Path(str(svg) + '.part')]
     try:
@@ -274,6 +277,22 @@ def draw(kind, parts, conns, title, pdf, svg, other=(), lang=None):
         for f in parts_:
             f.unlink(missing_ok=True)
     return sorted({split(e)[0] for c in conns for e in (c['from'], c['to'])}), len(pages) + len(tables)
+
+
+def harness_sheets(root, conns):
+    """The harness drawing (harness_draw.py) when the model routes wires in 3D (harness.py), else none. A routing that does
+    not resolve draws no harness: check.py rule «harness» says why."""
+    import harness
+    import harness_draw
+    try:
+        parts = json.loads((Path(root) / PARTS).read_text(encoding='utf-8')).get('parts') or []
+        if not harness.has_routes(parts, conns):
+            return []
+        wires, _ = harness.routes(parts, conns)
+        return harness_draw.sheets(wires, harness.config(conns)[0], _title(), T.project_lang(root))
+    except Exception as e:   # noqa: BLE001 - the scheme stays; the harness sheets wait for a wiring that resolves
+        print(f'[schemes] no harness drawing: {type(e).__name__}: {e}'[:300], flush=True)
+        return []
 
 
 def die(msg):
@@ -305,7 +324,8 @@ def build(kind, manifest, root='.'):
         pdf, svg = f'{OUT}/{kind}.pdf', f'{OUT}/{kind}.svg'
         other = [c for k, v in KINDS.items() if k != kind for c in conns[v]]
         try:
-            names, sheets = draw(kind, parts, mine, _title(), root / pdf, root / svg, other, T.project_lang(root))
+            names, sheets = draw(kind, parts, mine, _title(), root / pdf, root / svg, other, T.project_lang(root),
+                                 harness_sheets(root, conns) if kind == 'electric' else ())
         except (RuntimeError, OSError, subprocess.SubprocessError) as e:      # the layout (node + ELK) failed
             die(f'drawing the {kind} scheme failed: {e}')
         out = {'scheme': pdf, 'svg': svg, 'sheets': sheets, 'elements': names, 'connections': len(mine)}

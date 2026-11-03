@@ -74,6 +74,7 @@ const ru = {
   apk: { button: "Скачать приложение (APK)", tip: "Приложение для Android, версия {v}", ver: "Android, версия {v}" },
   motion: { world: "Показывать изделие", noCad: "нет в CAD", source: "Источник", unresolved: "Движение CAD: не найдено узлов — {n} (см. консоль)", s: "с" },
   device: "Устройство", keySpace: "Пробел",
+  wires: { show: "Провода ({n})", tip: "Провода внутри машины по их трассам, цвет — по цепи (длины отрезов — в списке покупок)" },
   sim: {
     pause: "Пауза", resume: "Продолжить", reset: "Сброс", max: "макс", clockTip: "Время машины (виртуальное)",
     ach: "факт ×{x}", lag: "×{x} — не успевает", maxAch: "макс ≈×{x}", paused: "на паузе", crashed: "сбой прошивки", boards: "Платы", machine: "Симуляция", flashReal: "Прошить на плату",
@@ -176,6 +177,7 @@ const en = {
   apk: { button: "Download the app (APK)", tip: "Android app, version {v}", ver: "Android, version {v}" },
   motion: { world: "Show the product", noCad: "not in CAD", source: "Source", unresolved: "CAD motion: assemblies not found — {n} (see the console)", s: "s" },
   device: "Device", keySpace: "Space",
+  wires: { show: "Wires ({n})", tip: "The wires inside the machine along their routes, coloured by net (cut lengths in the purchase list)" },
   sim: {
     pause: "Pause", resume: "Resume", reset: "Reset", max: "max", clockTip: "Machine time (virtual)",
     ach: "actual ×{x}", lag: "×{x} — falling behind", maxAch: "max ≈×{x}", paused: "paused", crashed: "firmware crash", boards: "Boards", machine: "Simulation", flashReal: "Flash to the board",
@@ -278,6 +280,7 @@ const pl = {
   apk: { button: "Pobierz aplikację (APK)", tip: "Aplikacja na Androida, wersja {v}", ver: "Android, wersja {v}" },
   motion: { world: "Pokaż wyrób", noCad: "brak w CAD", source: "Źródło", unresolved: "Ruch z CAD: nie znaleziono zespołów — {n} (zob. konsola)", s: "s" },
   device: "Urządzenie", keySpace: "Spacja",
+  wires: { show: "Przewody ({n})", tip: "Przewody wewnątrz maszyny wzdłuż ich tras, kolor wg obwodu (długości odcinków na liście zakupów)" },
   sim: {
     pause: "Pauza", resume: "Wznów", reset: "Reset", max: "maks", clockTip: "Czas maszyny (wirtualny)",
     ach: "faktycznie ×{x}", lag: "×{x} — nie nadąża", maxAch: "maks ≈×{x}", paused: "wstrzymano", crashed: "błąd firmware", boards: "Płytki", machine: "Symulacja", flashReal: "Wgraj na płytkę",

@@ -15,6 +15,7 @@ RULES = {
             "firmware": "прошивка не в PlatformIO",
             "schemes": "схема не сходится с моделью или PDF-ссылка на странице",
             "device": "виртуальное устройство не сходится с моделью",
+            "harness": "провода внутри машины: трасса через деталь, жгут не проходит, тесный изгиб или натяг при движении",
         },
         "cad": {
             "CAD layout": "раскладка CAD: params.py + папки узлов parts/<узел>/ с build()",
@@ -47,6 +48,7 @@ RULES = {
             "firmware": "firmware not a PlatformIO project",
             "schemes": "a scheme disagrees with the model, or a PDF link on the page",
             "device": "the virtual device disagrees with the model",
+            "harness": "wires inside the machine: a route through a part, a bundle that does not fit, a tight bend or a stretch in motion",
         },
         "cad": {
             "CAD layout": "CAD layout: params.py + node folders parts/<node>/ with build()",

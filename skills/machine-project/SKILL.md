@@ -1,6 +1,6 @@
 ---
 name: machine-project
-description: Use before creating any file in a machine project (where does it go?), when a project is new or has no aas/ (run scaffold), when the model, exports (print / laser / web), git or the AAS are touched, and at the end of every turn that changed files (run check.py; `check.py --kb` lints the wiki). The project standard: the model is the source of truth, one folder per layer (aas/ mechanics/ electronics/ physics/ sim/ docs/ wiki/ raw/ build/), source vs generated, the model-first loop, what goes to git. Scripts: scaffold.py, aas_sync.py, check.py, kb_lint.py, fit_checks.py (fits: screw in its hole, docked pairs, bought = drawn), meshpart.py (smooth housings as mesh parts), clearance.py (the build's own overlap check: no two parts share space, over the cycle), cad_incremental.py (`--model`: per-part incremental build123d build), derive.py (per-part exports: step / laser / print / bought / viewer), model_from_steps.py (model of a client-CAD project), part_library.py (the part library: `roots` / `sync` / `check`). Also use when the client asks for an app (phone / Android / operator / control app): there is exactly one way to make one, see «The machine's app».
+description: Use before creating any file in a machine project (where does it go?), when a project is new or has no aas/ (run scaffold), when the model, exports (print / laser / web), git or the AAS are touched, and at the end of every turn that changed files (run check.py; `check.py --kb` lints the wiki). The project standard: the model is the source of truth, one folder per layer (aas/ mechanics/ electronics/ physics/ sim/ docs/ wiki/ raw/ build/), source vs generated, the model-first loop, what goes to git. Scripts: scaffold.py, aas_sync.py, check.py, kb_lint.py, fit_checks.py (fits: screw in its hole, docked pairs, bought = drawn), meshpart.py (smooth housings as mesh parts), clearance.py (the build's own overlap check: no two parts share space, over the cycle), harness.py (wires in 3D: port locations, routes through waypoints, bundles, cut lengths, the harness check), cad_incremental.py (`--model`: per-part incremental build123d build), derive.py (per-part exports: step / laser / print / bought / viewer), model_from_steps.py (model of a client-CAD project), part_library.py (the part library: `roots` / `sync` / `check`). Also use when the client asks for an app (phone / Android / operator / control app): there is exactly one way to make one, see «The machine's app».
 ---
 
 # Machine project standard
@@ -487,6 +487,8 @@ builds it after every model change into two buttons of the page's download panel
   cup, cylinder, tank, silencer, fitting, tee). Give a part a human `title` (or `card.name`): that is its name on the drawing.
 - `check.py` (rule «schemes») checks both ways after every model build: every end is a port of a model part, and every element
   is on a scheme. Fix the model (ports, `scheme=False`, a wire), never the check.
+- The same WIRES, with port locations and waypoints, are the wires in 3D (below, «Wires in 3D»): the electric scheme's PDF
+  then ends with the harness drawing and the cut lengths.
 - You never run `schemes.py`, publish a PDF or link one from the page (`build.py --link`, config.json `links`): `check.py` fails it.
 
 ### Virtual device: a projection of the model (the web-viewer's device panel)
@@ -508,6 +510,49 @@ A device you can click on its page, running the firmware that goes to the chip, 
 - The firmware lives in `electronics/firmware/<board>/` (PlatformIO). Its wasm build for the page goes to `build/fw` (virtual-controllers
   build.mjs `--libdeps .pio/libdeps/<env>`, on the Mac / PC, never on the VPS) and the site gets `sim/site.json`
   `{"device": "../build/model/device.json", "fw": "../build/fw"}` (`build.py --sim sim`). Example: virtual-controllers `examples/player_demo`.
+
+### Wires in 3D: routed inside the machine, from the same model (`scripts/harness.py`)
+The scheme says what connects to what; inside a small, crowded enclosure that is not enough: how each wire runs, how long it
+is cut, whether the bundle fits the gap it passes and bends without breaking, and whether a wire to a moving part is pulled
+tight. All of that is computed from the model after every change, never measured or drawn by hand. Route every wire of a
+machine that has an enclosure, a board and wires to its parts.
+- **Port locations**, in the part file next to its `ports`: `ports_at={"J1.1": ((x, y, z), (dx, dy, dz)), "VCC": (x, y, z)}` =
+  where the wire leaves the part, in the part's own coordinates (mm), and the direction it leaves in (default +Z): the pin of a
+  header, the terminal of a motor, the lug of a switch. Compute them from the same numbers the shape uses (pin pitch,
+  connector position), never retype them. A wire is routed when both of its end ports have a location.
+- **Routes** through waypoints you write in `mechanics/cad/connections.py`, as you place parts:
+  ```python
+  WAYPOINTS = {"slot": (0.0, P_.SLOT_Y_MM, P_.SLOT_Z_MM),             # machine frame: a point in a wall's cutout, along a wall
+               "car": {"at": (-15, 0, 30), "on": "carriage"}}         # on a placement, its own coordinates: moves with it
+  WIRES = [{"from": "board.J1.5", "to": "switch.NO", "net": "LIMIT", "spec": "0.14 mm²", "via": ["hdr", "slot", "car"],
+            "loop": 30}, ...]                                         # loop = mm of service loop for a wire to a moving part
+  HARNESS = {"slack": 0.1, "ends_mm": 10, "bend": 4}                  # optional: the defaults
+  ```
+  The wire leaves each port straight (a lead of `bend` x its diameter, at least 5 mm), then runs through its `via` in order.
+  Wires that pass the same two waypoints one after the other share that segment: a **bundle**, its diameter from theirs
+  (`od` mm on a wire, else from its spec: mm², AWG, "4x0.25 mm²" = a cable). Put a waypoint in every opening a bundle passes
+  (its centre), at every clip, and where it turns; place points off a wall by the bundle's radius. Name placements in the
+  node (`place(p, name="board")`) so the ends read `board.J1.1`. A per-wire `bend` (10 for a wire that flexes) overrides;
+  `stock` (the purchase-list name of the wire, default "Wire <spec>") and `code` (its article) go to the cut list.
+- **What it gives**: each wire's route (corners rounded at the bend radius), its length, and its **cut length** =
+  (route + loop) x (1 + slack) + `ends_mm` per end, rounded up to 5 mm. The purchase list (bought scope) has a cut list of
+  wires per spec: one row per cut length naming its wires, a total in metres. The electric scheme PDF gets the **harness
+  drawing**: the routes flat with the connectors, pins and wire ids, segment lengths and bundle diameters, then the table
+  of wires with route, loop and cut length. The model page shows every wire as a tube coloured by its net (switch
+  «Wires» in View); a wire to a moving part follows the cycle.
+- **Checked after every build** (the viewer build runs it next to the part-overlap check, with the cycle it publishes;
+  `check.py` rule «harness» fails on any of them, a failing turn comes back to you like a clash):
+  `clash` = a bundle (its full diameter) goes through a part: add a waypoint around it; `gap` = it does not fit through
+  where a waypoint puts it (a slot, a hole, a clip smaller than the bundle): widen the opening or route a part of the bundle
+  elsewhere; `bend` = no room for the bend radius (bend x the bundle's diameter) at a waypoint, at rest or anywhere in the
+  cycle: move the waypoints apart, soften the turn; `stretch` = over the motion cycle the route gets longer than the rest
+  route + `loop`: give the `loop` it names, or route the wire along the moving part; `route` = a reference that does not
+  resolve (a `via` name not in WAYPOINTS, `ports_at` of a port the part does not have, `on` a placement that is not
+  there). The wire leaves its own part at its port, so the lead is not measured against that part; everything else is.
+  Fix the model (waypoints, ports, openings), never the check. `python3 $S/harness.py . [--motion build/motion.json]` runs
+  it alone; the report is `build/harness/report.json`. Example: framework `examples/wired-box` (board, motor, jack, a
+  carriage with a limit switch, wires through a divider's slot).
+- Not yet: automatic routing (shortest path through the free volume, along walls and ducts) - you place the waypoints.
 
 ## AAS: how it is built and checked
 
@@ -561,6 +606,9 @@ with an assert on the maker's section, the way `params.py` does. The geometric r
 report is of an older model **or was written by other fit rules** — a corrected tolerance takes effect on the next full run,
 it is not reported from the old report. A fastener's cached verdict is keyed on every part along its screw's axis, not just on
 the pair, so editing the part a screw bottoms out on does not leave the old verdict in place.
+**Wires in 3D** (`harness.py`, rule «harness», read from the last build's `build/harness/report.json`; a report of another
+model is a WARN): every routed bundle clear of the parts and through its gaps, no bend under `bend` x its diameter, no wire
+stretched over the cycle; see «Wires in 3D».
 **Overlaps: the model build checks them itself** (`clearance.py`, #19; you never run it). Every site build ends with the
 viewer build (web-viewer `build.py`), and on a code model that build first checks that no two parts share space: fixed parts
 where the model stands, moving ones over the whole cycle it is about to publish, grouped as the page moves them. A pair

@@ -1,0 +1,1879 @@
+{
+ "assetAdministrationShells": [
+  {
+   "idShort": "wired_box",
+   "modelType": "AssetAdministrationShell",
+   "id": "https://design-engineer.dev/ids/wired-box/aas",
+   "assetInformation": {
+    "assetKind": "Type",
+    "globalAssetId": "https://design-engineer.dev/ids/wired-box/asset"
+   },
+   "submodels": [
+    {
+     "type": "ModelReference",
+     "keys": [
+      {
+       "type": "Submodel",
+       "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+      }
+     ]
+    },
+    {
+     "type": "ModelReference",
+     "keys": [
+      {
+       "type": "Submodel",
+       "value": "https://design-engineer.dev/ids/wired-box/sm/Nameplate"
+      }
+     ]
+    },
+    {
+     "type": "ModelReference",
+     "keys": [
+      {
+       "type": "Submodel",
+       "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+      }
+     ]
+    },
+    {
+     "type": "ModelReference",
+     "keys": [
+      {
+       "type": "Submodel",
+       "value": "https://design-engineer.dev/ids/wired-box/sm/TechnicalData"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "submodels": [
+  {
+   "idShort": "HierarchicalStructures",
+   "modelType": "Submodel",
+   "id": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures",
+   "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+     {
+      "type": "GlobalReference",
+      "value": "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel"
+     }
+    ]
+   },
+   "submodelElements": [
+    {
+     "idShort": "ArcheType",
+     "modelType": "Property",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "https://admin-shell.io/idta/HierarchicalStructures/ArcheType/1/0"
+       }
+      ]
+     },
+     "value": "Full",
+     "valueType": "xs:string"
+    },
+    {
+     "idShort": "EntryNode",
+     "displayName": [
+      {
+       "language": "und",
+       "text": "Wired box"
+      }
+     ],
+     "modelType": "Entity",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0"
+       }
+      ]
+     },
+     "entityType": "CoManagedEntity",
+     "statements": [
+      {
+       "idShort": "a_box_0",
+       "displayName": [
+        {
+         "language": "und",
+         "text": "box"
+        }
+       ],
+       "modelType": "Entity",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+         }
+        ]
+       },
+       "statements": [
+        {
+         "idShort": "p_enclosure_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "enclosure"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_enclosure_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_enclosure"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        },
+        {
+         "idShort": "p_Driver_board_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "Driver board"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_Driver_board_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_Driver_board"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        },
+        {
+         "idShort": "p_NEMA_14_stepper_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "NEMA 14 stepper"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_NEMA_14_stepper_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_NEMA_14_stepper"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        },
+        {
+         "idShort": "p_DC_jack_5_5_2_1_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "DC jack 5.5/2.1"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_DC_jack_5_5_2_1_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_DC_jack_5_5_2_1"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        },
+        {
+         "idShort": "p_carriage_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "carriage"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_carriage_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_carriage"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        },
+        {
+         "idShort": "p_Limit_switch_0",
+         "displayName": [
+          {
+           "language": "und",
+           "text": "Limit switch"
+          }
+         ],
+         "modelType": "Entity",
+         "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+           {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0"
+           }
+          ]
+         },
+         "statements": [
+          {
+           "idShort": "SameAs",
+           "modelType": "RelationshipElement",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0"
+             }
+            ]
+           },
+           "first": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/HierarchicalStructures"
+             },
+             {
+              "type": "Entity",
+              "value": "EntryNode"
+             },
+             {
+              "type": "Entity",
+              "value": "a_box_0"
+             },
+             {
+              "type": "Entity",
+              "value": "p_Limit_switch_0"
+             }
+            ]
+           },
+           "second": {
+            "type": "ModelReference",
+            "keys": [
+             {
+              "type": "Submodel",
+              "value": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "Parts"
+             },
+             {
+              "type": "SubmodelElementCollection",
+              "value": "P_Limit_switch"
+             }
+            ]
+           }
+          },
+          {
+           "idShort": "BulkCount",
+           "modelType": "Property",
+           "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+             {
+              "type": "GlobalReference",
+              "value": "https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0"
+             }
+            ]
+           },
+           "value": "1",
+           "valueType": "xs:unsignedLong"
+          }
+         ],
+         "entityType": "CoManagedEntity"
+        }
+       ],
+       "entityType": "CoManagedEntity"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "idShort": "Nameplate",
+   "modelType": "Submodel",
+   "id": "https://design-engineer.dev/ids/wired-box/sm/Nameplate",
+   "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+     {
+      "type": "GlobalReference",
+      "value": "https://admin-shell.io/idta/nameplate/3/0/Nameplate"
+     }
+    ]
+   },
+   "submodelElements": [
+    {
+     "idShort": "ManufacturerProductDesignation",
+     "modelType": "MultiLanguageProperty",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "0112/2///61987#ABA567#009"
+       }
+      ]
+     },
+     "value": [
+      {
+       "language": "en",
+       "text": "Wired box"
+      }
+     ]
+    },
+    {
+     "idShort": "ManufacturerProductType",
+     "modelType": "Property",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "0112/2///61987#ABA300#008"
+       }
+      ]
+     },
+     "qualifiers": [
+      {
+       "value": "scaffold",
+       "kind": "ConceptQualifier",
+       "valueType": "xs:string",
+       "type": "source"
+      }
+     ],
+     "value": "wired-box",
+     "valueType": "xs:string"
+    }
+   ]
+  },
+  {
+   "idShort": "PartCatalog",
+   "modelType": "Submodel",
+   "id": "https://design-engineer.dev/ids/wired-box/sm/PartCatalog",
+   "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+     {
+      "type": "GlobalReference",
+      "value": "https://design-engineer.dev/semantics/partcatalog/1/0"
+     }
+    ]
+   },
+   "submodelElements": [
+    {
+     "idShort": "Parts",
+     "modelType": "SubmodelElementCollection",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "https://design-engineer.dev/semantics/partcatalog/Parts"
+       }
+      ]
+     },
+     "value": [
+      {
+       "idShort": "P_enclosure",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "enclosure",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "enclosure",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "made",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "PETG",
+         "valueType": "xs:string"
+        }
+       ]
+      },
+      {
+       "idShort": "P_Driver_board",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "Driver_board",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "Driver board",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "bought",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "other",
+         "valueType": "xs:string"
+        }
+       ]
+      },
+      {
+       "idShort": "P_NEMA_14_stepper",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "NEMA_14_stepper",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "NEMA 14 stepper",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "bought",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "other",
+         "valueType": "xs:string"
+        }
+       ]
+      },
+      {
+       "idShort": "P_DC_jack_5_5_2_1",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "DC_jack_5_5_2_1",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "DC jack 5.5/2.1",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "bought",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "other",
+         "valueType": "xs:string"
+        }
+       ]
+      },
+      {
+       "idShort": "P_carriage",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "carriage",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "carriage",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "made",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "PETG",
+         "valueType": "xs:string"
+        }
+       ]
+      },
+      {
+       "idShort": "P_Limit_switch",
+       "modelType": "SubmodelElementCollection",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/partcatalog/Part"
+         }
+        ]
+       },
+       "value": [
+        {
+         "idShort": "PartId",
+         "modelType": "Property",
+         "value": "Limit_switch",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Name",
+         "modelType": "Property",
+         "value": "Limit switch",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Kind",
+         "modelType": "Property",
+         "value": "bought",
+         "valueType": "xs:string"
+        },
+        {
+         "idShort": "Material",
+         "modelType": "Property",
+         "value": "other",
+         "valueType": "xs:string"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "idShort": "TechnicalData",
+   "modelType": "Submodel",
+   "id": "https://design-engineer.dev/ids/wired-box/sm/TechnicalData",
+   "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+     {
+      "type": "GlobalReference",
+      "value": "0173-1#01-AHX837#002"
+     }
+    ]
+   },
+   "submodelElements": [
+    {
+     "idShort": "GeneralInformation",
+     "modelType": "SubmodelElementCollection",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "0173-1#02-ABK161#002/0173-1#01-AHX838#002"
+       }
+      ]
+     },
+     "value": [
+      {
+       "idShort": "ManufacturerProductDesignation",
+       "modelType": "MultiLanguageProperty",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "0173-1#02-AAW338#003"
+         }
+        ]
+       },
+       "value": [
+        {
+         "language": "en",
+         "text": "Wired box"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "idShort": "ModelParameters",
+     "modelType": "SubmodelElementCollection",
+     "semanticId": {
+      "type": "ExternalReference",
+      "keys": [
+       {
+        "type": "GlobalReference",
+        "value": "https://design-engineer.dev/semantics/modelparameters/1/0"
+       }
+      ]
+     },
+     "value": [
+      {
+       "idShort": "INNER_L_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/INNER_L_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "180.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "INNER_W_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/INNER_W_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "90.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "INNER_H_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/INNER_H_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "50.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "WALL_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/WALL_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "2.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "DIVIDER_H_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/DIVIDER_H_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "40.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "SLOT_W_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/SLOT_W_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "12.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "SLOT_H_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/SLOT_H_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "8.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "SLOT_Y_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/SLOT_Y_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "0.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "SLOT_Z_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/SLOT_Z_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "26.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "BOARD_L_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/BOARD_L_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "50.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "BOARD_W_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/BOARD_W_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "36.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "BOARD_T_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/BOARD_T_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "1.6",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "STANDOFF_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/STANDOFF_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "5.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "BOARD_X_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/BOARD_X_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "-60.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "BOARD_Y_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/BOARD_Y_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "0.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "HEADER_H_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/HEADER_H_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "8.5",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "PITCH_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/PITCH_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "2.54",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "MOTOR_SQ_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/MOTOR_SQ_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "35.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "MOTOR_LEN_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/MOTOR_LEN_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "28.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "MOTOR_X_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/MOTOR_X_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "40.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "MOTOR_Y_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/MOTOR_Y_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "-20.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "JACK_Y_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/JACK_Y_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "10.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "JACK_Z_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/JACK_Z_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "20.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "CARRIAGE_X_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/CARRIAGE_X_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "30.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "CARRIAGE_Y_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/CARRIAGE_Y_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "25.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "CARRIAGE_TRAVEL_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/CARRIAGE_TRAVEL_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "25.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "CYCLE_T",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/CYCLE_T"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        }
+       ],
+       "value": "2.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "FLOOR_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/FLOOR_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "2.0",
+       "valueType": "xs:double"
+      },
+      {
+       "idShort": "HEADER_X_MM",
+       "modelType": "Property",
+       "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+         {
+          "type": "GlobalReference",
+          "value": "https://design-engineer.dev/semantics/modelparameters/HEADER_X_MM"
+         }
+        ]
+       },
+       "qualifiers": [
+        {
+         "value": "mechanics/cad/params.py",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "source"
+        },
+        {
+         "value": "mm",
+         "kind": "ConceptQualifier",
+         "valueType": "xs:string",
+         "type": "unit"
+        }
+       ],
+       "value": "-40.0",
+       "valueType": "xs:double"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
