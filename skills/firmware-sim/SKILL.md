@@ -1,6 +1,6 @@
 ---
 name: firmware-sim
-description: Build a client's microcontroller firmware and run it in an open-source board simulator — PlatformIO (ESP32 / S3 / C3, STM32, AVR toolchains pre-cached), Espressif QEMU for ESP32/S3/C3, Renode for STM32 (and a Python fake peripheral that feeds synthetic ADC data with noise to test filtering code), simavr for AVR/Arduino Uno — build → run with a timeout → read the UART log → report. For logic, protocol sequences, state machines, register setup and filter code on synthetic data; NOT for analog noise, EMI or grounding (that is emc-debug). Use when a client sends firmware and asks whether it works, or before proposing a firmware change.
+description: Build a client's microcontroller firmware and run it in an open-source board simulator — PlatformIO (ESP32 / S3 / C3, STM32, AVR), Espressif QEMU for ESP32/S3/C3, Renode for STM32 (and a Python fake peripheral that feeds synthetic ADC data with noise to test filtering code), simavr for AVR/Arduino Uno — build → run with a timeout → read the UART log → report. For logic, protocol sequences, state machines, register setup and filter code on synthetic data; NOT for analog noise, EMI or grounding (that is emc-debug). Use when a client sends firmware and asks whether it works, or before proposing a firmware change.
 ---
 
 # Firmware in a simulator
@@ -28,13 +28,23 @@ repo, not a pasted fragment); which pins/peripherals are used; what "works" mean
    `cp -r ${DE_ROOT:-/opt/design-engineer}/skills/firmware-sim/examples/<ex> fw/<name>`.
 2. Write the failure criterion before running (`engineer-loop`): e.g. "log must reach DONE within 2 s virtual time,
    avg8 p-p after the step < 300 counts".
-3. Run in the firmware image — **on the platform: `job run --needs fw "cd fw/<name> && ./run.sh"`** (toolchains
-   are pre-cached there; the default worker has no PlatformIO; locally: wherever PlatformIO and the simulator are installed). Always with a timeout; every `run.sh` ends with a
-   PASS/FAIL grep.
+3. Run it: `cd fw/<name> && ./run.sh` (heavy: through `job run --timeout 900 "…"`). **Where the tools are:**
+   - **locally** (`install.sh`): `pio`, `qemu-system-xtensa`, `qemu-system-riscv32` and `simavr` are in `~/.local/bin` by default;
+     `renode` only after `install.sh --extras stm32`. PlatformIO downloads a platform's toolchain on its first build (ESP32: a few
+     hundred MB, minutes; network needed), into `~/.platformio`. A tool missing from `~/.local/bin`: run the installer again with
+     the extra, don't install it ad hoc.
+   - **on the platform:** `job run --needs fw "cd fw/<name> && ./run.sh"` (the firmware image, toolchains pre-cached; the default
+     worker has no PlatformIO).
+   Always with a timeout; every `run.sh` ends with a PASS/FAIL grep.
 4. **Read `uart.log` yourself** before claiming anything. Then report: what was run, on which simulated board, what the
    log shows, what it does NOT prove.
 
-## Examples (each verified on the fw image 2026-09-26, PASS on DONE; copy, don't edit in place)
+## Examples (PASS on DONE; copy, don't edit in place)
+
+Verified with `install.sh` tools on macOS arm64 2026-11-03 (all three; `tests/test_install.py`, `DE_TEST_FW_EXAMPLES=1`), and on
+the fw image 2026-09-26 (avr, stm32; esp32 then on the image's own espressif32). On Linux the installer was run in a Debian arm64
+container (the tools answer), the examples not yet. On the platform `esp32_qemu` downloads espressif32 6.13 (~1.5 GB) into the
+job until the fw image precaches that version.
 
 | Example | Simulator | Notes |
 |---|---|---|
@@ -61,7 +71,7 @@ out of the box; an SPI-level model needs a C# peripheral — only worth it if th
 A simulator PASS is not a flashed board. To put the firmware on the client's real board, publish the build; the viewer's board card then offers its Flash button
 (Web Serial in Chrome/Edge on the client's PC; nothing to install), and you can drive the same flash through the open viewer.
 
-1. **Publish** (build + manifest + binaries in one command; run where PlatformIO is, e.g. `job run --needs fw`):
+1. **Publish** (build + manifest + binaries in one command; needs `pio`: locally from `install.sh`, on the platform `job run --needs fw`):
    `python3 ${DE_ROOT:-/opt/design-engineer}/skills/firmware-sim/scripts/fw_publish.py electronics/firmware/<card> --card <card> --out build/fw_publish`
    `<card>` = the board id of the viewer's board card (`META.boards` in `sim/machine.mjs`) = the folder name. Options: `--env`, `--version "v18 a1b2c3d"`, `--no-build`, `--boot-app0 FILE`.
    It reads the chip from the PlatformIO `board`, takes `monitor_speed` from the sketch's `Serial.begin(N)` (that wins over platformio.ini), and writes
@@ -97,9 +107,13 @@ result is the board's own log, not a simulation.
 - Renode: good for STM32/nRF/many Cortex-M boards; ESP32 support weak — use QEMU for ESP32. Unknown peripheral
   accesses are logged as warnings in `renode.log` (read it: a silent hang is often a missing peripheral).
 - simavr: AVR cores only; timing is cycle-level but no analog.
-- Arduino-ESP32 in PlatformIO is the platform's pinned core (2.0.x at the time of writing) — if the client uses
-  core 3.x, pin `platform = ` to a matching version and note the extra download time.
-- PlatformIO downloads libraries from `lib_deps` at build time (network needed); toolchains are pre-cached.
+- The `esp32_qemu` example pins `espressif32@6.13.0` (Arduino-ESP32 2.0.x, ~1.5 GB of toolchain). Plain `espressif32` is now
+  8.x with core 3.x (~5 GB): in Espressif QEMU such a sketch panicked in ~40% of boots ("Guru Meditation … Cache disabled but
+  cached memory region accessed", 2026-11-03), the same image 20/20 fine on 2.0.x. A client on core 3.x: run with `-icount 3`
+  added to the qemu line (no panic in 14 boots, ~50 s per run instead of 2 s), and never read one PASS as proof — boot it
+  several times.
+- PlatformIO downloads libraries from `lib_deps` at build time (network needed); toolchains are pre-cached in the fw image, and
+  downloaded on the first build of a platform locally.
 
 ## To the client
 

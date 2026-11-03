@@ -102,7 +102,8 @@ def install(tmp_path, claude):
     home.mkdir()
     env = clean_env(HOME=str(home), CLAUDE_CONFIG_DIR=str(tmp_path / "cfg"), CLAUDE_BIN=str(claude),
                     DE_VENV=os.environ.get("DE_VENV") or str(Path.home() / ".local/share/design-engineer/venv"))
-    return run(["sh", str(AGENT / "install.sh")], cwd=tmp_path, env=env, timeout=1800), home
+    # --no-firmware: these tests are about the Claude Code step; the firmware downloads are covered in test_install.py.
+    return run(["sh", str(AGENT / "install.sh"), "--no-firmware"], cwd=tmp_path, env=env, timeout=1800), home
 
 
 def test_install_registers_the_clean_clone_as_marketplace_and_installs(tmp_path):

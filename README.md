@@ -24,9 +24,22 @@ curl -fsSL https://raw.githubusercontent.com/aimsolve/design-engineer/main/insta
 ```
 
 It installs [uv](https://docs.astral.sh/uv/) if missing, the Python 3.12 environment of the core (build123d and friends, ~1 GB,
-once), `de` in `~/.local/bin`, and this plugin into Claude Code. Requirements: git and
-[Claude Code](https://claude.com/claude-code); no API keys beyond your Claude Code login. Optional parts:
-`sh install.sh --extras sim,fea,render,electronics` (MuJoCo, gmsh FEA, Playwright renders, circuit tools).
+once), `de` in `~/.local/bin`, this plugin into Claude Code, and the firmware tools. Requirements: git, curl and
+[Claude Code](https://claude.com/claude-code); no API keys beyond your Claude Code login, no sudo.
+
+| Part | What for | How |
+|---|---|---|
+| core: build123d, `de`, the plugin | the model, checks, the viewer | always |
+| [PlatformIO](https://platformio.org) | builds firmware for ESP32 / AVR / RP2 / STM32; `fw_publish.py` (flashing from the viewer) | default; toolchains download on the first build of each platform |
+| [Espressif QEMU](https://github.com/espressif/qemu) | runs ESP32, ESP32-S3, ESP32-C3 firmware (`firmware-sim`) | default (~100 MB on macOS, ~200 MB on Linux, with its libraries from conda-forge) |
+| [simavr](https://github.com/buserror/simavr) | runs AVR / Arduino Uno firmware (`firmware-sim`) | default (PlatformIO's build, ~2 MB) |
+| [Renode](https://renode.io) | runs STM32 firmware (`firmware-sim`) | `--extras stm32` (~180 MB; Linux, or a Mac with Apple silicon) |
+| [emscripten](https://emscripten.org) | builds the firmware of the viewer's virtual board (`virtual-controllers`; without it, Docker) | `--extras wasm` (~1.5 GB; also its `node` when the machine has none) |
+| MuJoCo, gmsh FEA, Playwright renders, circuit tools | engineering sims, renders, circuits | `--extras sim,fea,render,electronics` |
+
+Extras combine (`sh -s -- --extras stm32,wasm` after the pipe); `--no-firmware` skips the firmware tools, `--no-claude` the plugin.
+The tools live in `~/.local/share/design-engineer/tools`, called through small wrappers in `~/.local/bin`; a file of yours
+already there is left alone. Running the installer again updates the core and fetches only what is missing.
 
 ## Use
 
