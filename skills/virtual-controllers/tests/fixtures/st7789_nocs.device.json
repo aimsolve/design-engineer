@@ -1,0 +1,53 @@
+{
+ "boards": [
+  {
+   "id": "mcu",
+   "part": "esp32_devkit",
+   "model": "esp32",
+   "fw": "st7789_spi"
+  }
+ ],
+ "elements": [
+  {
+   "id": "tft",
+   "part": "tft_st7789",
+   "model": "st7789",
+   "board": "mcu",
+   "params": {
+    "w": 240,
+    "h": 320,
+    "x_off": 0,
+    "y_off": 0
+   },
+   "ports": {
+    "SCL": {
+     "board": "mcu",
+     "pin": 18
+    },
+    "SDA": {
+     "board": "mcu",
+     "pin": 23
+    },
+    "DC": {
+     "board": "mcu",
+     "pin": 16
+    },
+    "CS": null,
+    "RST": {
+     "board": "mcu",
+     "pin": 17
+    },
+    "BLK": {
+     "board": "mcu",
+     "pin": 4
+    },
+    "VCC": {
+     "rail": "vcc"
+    },
+    "GND": {
+     "rail": "gnd"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+{
+  "updated": "YYYY-MM-DD HH:MM",
+  "tasks": [
+    {"name": "<short task name, client's language>", "why": "<what it is for>", "state": "<one line>", "pct": 0, "eta": "<agent time: 40 min / by 15:30, never days>", "updated": "YYYY-MM-DD HH:MM"}
+  ]
+}

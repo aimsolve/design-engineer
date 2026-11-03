@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CAD</title>
+<style>
+  :root { --bg:#eef2f5; --ink:#1d2730; --muted:#5b6873; --acc:#d9480f; --panel:#ffffffe8; --line:#cfd8df; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--ink);
+               font:14px/1.4 -apple-system, system-ui, sans-serif; }
+  #stage { position:fixed; inset:0; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #stage canvas { display:block; touch-action:none; }
+  .card { position:fixed; z-index:5; background:var(--panel); backdrop-filter:blur(6px); border:1px solid var(--line);
+          border-radius:10px; padding:8px 12px 10px; overflow:auto; }
+  .head { display:flex; align-items:center; gap:4px; min-height:30px; cursor:pointer; }
+  .ttl { flex:1; min-width:0; font-weight:700; font-size:15px; }
+  .collapsed .ttl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .collapsed .body { display:none; }
+  .icon { border:0; background:none; font-size:18px; line-height:1; padding:4px 8px; cursor:pointer; color:var(--ink); }
+  .fold::before { content:"▾"; } .collapsed .fold::before { content:"▸"; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; align-items:center; }
+  button { font:inherit; padding:6px 12px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; color:var(--ink); }
+  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  label { color:var(--muted); font-size:12px; }
+  .sub { color:var(--muted); font-size:12px; margin:6px 0; }
+  .hint { color:var(--muted); font-size:11px; margin-top:8px; border-top:1px solid var(--line); padding-top:6px; }
+  #panel { top:16px; left:16px; width:340px; max-width:calc(100vw - 32px); max-height:calc(100vh - 32px); }
+  #bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:6px; }
+  #barFill { height:100%; width:0; background:var(--acc); }
+  #curOp { font-size:12px; margin-top:4px; font-weight:600; }
+  #meta { color:var(--muted); font-size:12px; margin-top:6px; }
+  ol { margin:6px 0 0; padding-left:22px; }
+  ol li { padding:2px 4px; border-radius:4px; color:var(--muted); }
+  ol li small { display:none; font-weight:400; color:var(--muted); }
+  ol li.on { color:var(--ink); background:#ffe8d9; font-weight:600; }
+  ol li.on small { display:block; }
+  #info { top:16px; right:16px; width:320px; max-width:calc(100vw - 32px); max-height:calc(100vh - 32px); }
+  #infoD { color:var(--muted); font-size:12px; margin:2px 0 8px; }
+  #infoP { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; margin:0; font-size:12px; }
+  #infoP dt { color:var(--muted); } #infoP dd { margin:0; font-variant-numeric:tabular-nums; word-break:break-all; }
+  #info .row button { flex:1 1 auto; }
+  #infoHide.on { background:var(--acc); color:#fff; border-color:var(--acc); }
+  .tag { position:absolute; transform:translate(-50%,-100%); background:#1d2730e0; color:#fff; font-size:11px;
+         padding:2px 6px; border-radius:4px; white-space:nowrap; pointer-events:none; }
+  .mob { display:none; }
+  @media (max-width:700px) {
+    #panel { top:8px; left:8px; right:8px; width:auto; max-width:none; max-height:42vh; padding:6px 10px 8px; }
+    #info { top:auto; bottom:8px; left:8px; right:8px; width:auto; max-width:none; max-height:45vh; border-radius:12px;
+            padding:6px 10px calc(8px + env(safe-area-inset-bottom)); }
+    button { padding:7px 10px; }
+    .desk { display:none; } .mob { display:block; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="panel" class="card">
+  <div class="head" id="pHead"><div class="ttl" id="pTitle"></div><button class="icon fold" id="pFold"></button></div>
+  <div class="row">
+    <button id="bRun" class="on"></button><button id="bStep"></button>
+    <button id="bView" hidden></button><button id="bReset"></button><button id="bShowAll" hidden></button>
+    <label id="lSlow"><input id="slow" type="checkbox" checked> <span id="lSlowT"></span></label>
+  </div>
+  <div id="bar"><div id="barFill"></div></div>
+  <div id="curOp"></div>
+  <div class="body">
+    <div class="sub" id="pSub"></div>
+    <div class="sub" id="pAxes"></div>
+    <ol id="ops"></ol>
+    <div id="meta"></div>
+    <div class="hint desk" id="hintD"></div><div class="hint mob" id="hintM"></div>
+  </div>
+</div>
+<div id="info" class="card" hidden>
+  <div class="head" id="infoHead"><div class="ttl" id="infoT"></div><button class="icon fold" id="infoFold"></button><button class="icon" id="infoX">×</button></div>
+  <div class="body">
+    <div id="infoD"></div>
+    <dl id="infoP"></dl>
+    <div class="row"><button id="infoCenter"></button><button id="infoHide"></button><button id="infoHideStem" hidden></button></div>
+  </div>
+</div>
+<script>/*__THREE__*/</script>
+<script>
+(function () {
+  "use strict";
+  // Generic CAD-model viewer. Everything project-specific lives in the project hook (project.js, inlined below as
+  // `viewerProject`). Numbers come from `P` (params.json); meshes from `MESHES` (meshes.json). No product number here.
+  var V3 = THREE.Vector3;
+  /*__PARAMS__*/
+  /*__MESHES__*/
+
+  // ---------------- UI text: page_i18n.js (VIEWER_I18N), the client's language: ?lang=, else the hook's `lang`, else ru; ----------------
+  // ---------------- a project may override any key (hook `labels`) ----------------
+  /*__I18N__*/
+  var QLANG = (/[?&]lang=(\w+)/.exec(location.search) || [])[1];
+  var L = Object.assign({}, VIEWER_I18N[QLANG] || VIEWER_I18N.ru);
+  function fmt(s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k]; }); }
+  function $(id) { return document.getElementById(id); }
+
+  // ---------------- small helpers, also handed to the project hook ----------------
+  function k(t, a, b) { return Math.min(1, Math.max(0, (t - a) / (b - a))); }                 // clamped ramp 0..1
+  function ease(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
+  function there(t, a, b) { var m = (a + b) / 2; return t < m ? ease(k(t, a, m)) : 1 - ease(k(t, m, b)); }   // out and back
+  function num(v, d) { var f = Math.pow(10, d); return String(Math.round(v * f) / f).replace(".", L.decimal); }
+  function mm(v) { return num(v, 1); }
+  function mm2(v) { return num(v, 2); }
+  function mat(c, o) { return new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.5, metalness: 0.3 }, o || {})); }
+  function box(w, h, d, m) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); }
+  function at(o, x, y, z, parent) { o.position.set(x, y, z); (parent || scene).add(o); return o; }
+
+  // ---------------- renderer / scene ----------------
+  var stage = $("stage");
+  // Log depth buffer: thin parts (paper, films) a few hundredths of a mm off a surface stay stable. With it,
+  // polygonOffset does nothing (depth is written in the shader) -- only real geometry gaps separate surfaces.
+  var renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  stage.appendChild(renderer.domElement);
+  var canvas = renderer.domElement;
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeef2f5);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.9));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(400, 900, 600); scene.add(sun);
+
+  var groups = {}, byName = {}, pickables = [], TAGS = [];
+  var spare = {};
+  function G(name) { return groups[name] || spare[name] || (spare[name] = new THREE.Group()); }   // unknown group: harmless dummy
+  function find(sub) { for (var n in byName) if (n.toLowerCase().indexOf(sub) >= 0) return byName[n]; return null; }
+  function findAll(sub) { var r = []; for (var n in byName) if (n.toLowerCase().indexOf(sub) >= 0) r.push(byName[n]); return r; }
+
+  // ---------------- per-vertex helpers: CAD meshes keep world coordinates, so deforming = rewriting vertices ----------------
+  function cacheOrig(mesh) {
+    if (!mesh.userData.orig) {
+      mesh.userData.orig = mesh.geometry.attributes.position.array.slice();
+      mesh.geometry.computeBoundingBox();
+      mesh.userData.bb0 = mesh.geometry.boundingBox.clone();
+    }
+    return mesh.userData.orig;
+  }
+  function springLen(mesh) { cacheOrig(mesh); var b = mesh.userData.bb0; return b.max.y - b.min.y; }
+  // factor 1 = free length, < 1 = compressed toward the fixed end ("max" = top end fixed, "min" = bottom end fixed)
+  function setSpring(mesh, factor, fixedEnd) {
+    if (!mesh) return;
+    var orig = cacheOrig(mesh), b = mesh.userData.bb0, pos = mesh.geometry.attributes.position.array;
+    var base = fixedEnd === "min" ? b.min.y : b.max.y;
+    factor = Math.max(0.05, Math.min(1, factor));
+    for (var i = 1; i < orig.length; i += 3) pos[i] = base + (orig[i] - base) * factor;
+    mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
+  // rigid rotation of a mesh's vertices about an axis ("x"|"y"|"z") through `pivot` (V3; default: its bbox centre)
+  function rotateAbout(mesh, axis, angle, pivot) {
+    if (!mesh) return;
+    var orig = cacheOrig(mesh), pos = mesh.geometry.attributes.position.array;
+    var p = pivot || mesh.userData.bb0.getCenter(new V3());
+    var a = axis === "x" ? 1 : 0, b = axis === "z" ? 1 : 2;                   // the two coordinates that turn
+    if (axis === "y") { a = 2; b = 0; }
+    var pa = p.getComponent(a), pb = p.getComponent(b), c = Math.cos(angle), s = Math.sin(angle);
+    for (var i = 0; i < orig.length; i += 3) {
+      var da = orig[i + a] - pa, db = orig[i + b] - pb;
+      pos[i + a] = pa + da * c - db * s;
+      pos[i + b] = pb + da * s + db * c;
+    }
+    mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
+  // live flexible part (hose, cable): a tube rebuilt each call through `points` (V3 list). Returns update(points).
+  function tube(name, color, radius, parent) {
+    var mesh = null;
+    return function (points) {
+      var geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 24, radius, 8, false);
+      if (!mesh) {
+        mesh = new THREE.Mesh(geo, mat(color, { metalness: 0.1, roughness: 0.6 }));
+        mesh.name = name; (parent || scene).add(mesh); pickables.push(mesh);
+      } else { mesh.geometry.dispose(); mesh.geometry = geo; }
+      return mesh;
+    };
+  }
+  // screen label pinned to a world point (V3) or following an object's bbox top. opts: {color, bold, minDist, maxDist, dx, dy}
+  function addTag(text, where, opts) {
+    var t = Object.assign({ t: text }, opts || {});
+    if (where && where.isVector3) t.p = where; else t.o = where;
+    t.el = document.createElement("div"); t.el.className = "tag"; t.el.textContent = text;
+    if (t.color) t.el.style.background = t.color;
+    if (t.bold) { t.el.style.fontWeight = "700"; t.el.style.fontSize = "13px"; }
+    stage.appendChild(t.el); TAGS.push(t); return t;
+  }
+
+  // ---------------- project hook ----------------
+  /*__PROJECT__*/
+  var V = { THREE: THREE, P: P, scene: scene, groups: groups, byName: byName, pickables: pickables, G: G, find: find,
+    findAll: findAll, mat: mat, box: box, at: at, k: k, ease: ease, there: there, mm: mm, mm2: mm2, num: num,
+    springLen: springLen, setSpring: setSpring, rotateAbout: rotateAbout, tube: tube, addTag: addTag, L: L };
+  var PR = (typeof viewerProject === "function" ? viewerProject(V) : null) || {};
+  if (!VIEWER_I18N[QLANG] && PR.lang && VIEWER_I18N[PR.lang]) Object.assign(L, VIEWER_I18N[PR.lang]);
+  if (VIEWER_I18N[QLANG] || VIEWER_I18N[PR.lang]) document.documentElement.lang = VIEWER_I18N[QLANG] ? QLANG : PR.lang;
+  Object.assign(L, PR.labels || {});
+  var CYCLE = PR.cycle || 0;
+  var OPS = PR.ops || [];
+
+  // ---------------- CAD meshes ----------------
+  function defaultMaterial(m) {
+    var c = new THREE.Color(m.color), lum = c.r + c.g + c.b, op = m.opacity == null ? 1 : m.opacity;
+    return mat(m.color, { metalness: lum > 2.4 ? 0.1 : 0.45, roughness: 0.45, transparent: op < 1, opacity: op });
+  }
+  var sceneBox = new THREE.Box3();
+  MESHES.forEach(function (m) {
+    var g = groups[m.group];
+    if (!g) { g = groups[m.group] = new THREE.Group(); g.userData.group = m.group; scene.add(g); }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(m.pos, 3));
+    geo.setIndex(m.idx);
+    geo.computeVertexNormals();
+    geo.computeBoundingBox(); sceneBox.union(geo.boundingBox);
+    var mesh = new THREE.Mesh(geo, (PR.material && PR.material(m, geo)) || defaultMaterial(m));
+    if (PR.edges !== false)
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), new THREE.LineBasicMaterial({ color: 0x3a434a, transparent: true, opacity: 0.35 })));
+    mesh.name = m.name; mesh.userData.src = m;
+    g.add(mesh); byName[m.name] = mesh; pickables.push(mesh);
+  });
+  Object.keys(P.GROUP_PARENT || {}).forEach(function (c) {            // riders: child group moves with its parent
+    var par = groups[P.GROUP_PARENT[c]];
+    if (groups[c] && par) { scene.remove(groups[c]); par.add(groups[c]); }
+  });
+  var sceneSize = sceneBox.isEmpty() ? 1000 : sceneBox.getSize(new V3()).length();
+  var sceneCentre = sceneBox.isEmpty() ? new V3() : sceneBox.getCenter(new V3());
+  var camera = new THREE.PerspectiveCamera(35, 1, PR.near || sceneSize * 0.005, sceneSize * 20);
+  var ZOOM = PR.zoom || [camera.near * 3, sceneSize * 3];
+  var PITCH_RANGE = PR.pitchRange || [-1.45, 1.45];
+
+  if (PR.axes) {                                                        // axis gizmo: shared words for "move it along X"
+    var AX = new V3().fromArray(PR.axes.at || [0, 0, 0]), AS = PR.axes.size || sceneSize * 0.1;
+    var axes = new THREE.AxesHelper(AS); axes.position.copy(AX); scene.add(axes);
+    [["X", 0, "#e03131"], ["Y", 1, "#2f9e44"], ["Z", 2, "#1c7ed6"]].forEach(function (a) {
+      var p = AX.clone(); p.setComponent(a[1], p.getComponent(a[1]) + AS * 1.1);
+      addTag(a[0], p, { color: a[2], bold: true, minDist: PR.axes.minDist || 0 });   // hidden in close-ups: tags must not cover parts
+    });
+  }
+  if (PR.setup) PR.setup();
+
+  // ---------------- part card text: from the part record (meshes.json title/desc), else the hook's `parts` list ----------------
+  function describe(mesh) {
+    var src = mesh.userData.src || {}, part = mesh.name.split("/").pop();
+    if (src.title || src.desc) return { title: src.title || part, desc: src.desc || "" };
+    var list = PR.parts || [];
+    for (var i = 0; i < list.length; i++) if (part.indexOf(list[i][0]) >= 0) return { title: list[i][1], desc: list[i][2] || "" };
+    return null;
+  }
+  var noText = MESHES.filter(function (m) { return !describe(byName[m.name]); }).map(function (m) { return m.name; });
+  if (noText.length) console.warn("viewer: " + noText.length + " parts have no card text: " + noText.slice(0, 20).join(", ") + (noText.length > 20 ? " ..." : ""));
+  function motionText(mesh) {
+    var g = mesh.parent && mesh.parent.userData.group;
+    if (!g) return "";
+    return (PR.groupText && PR.groupText[g]) || (g === "static" ? L.still : g);
+  }
+
+  // ---------------- fold state (panel, card): collapsed by default on a phone; remembered per viewer ----------------
+  function narrow() { return window.innerWidth <= 700; }
+  function store(key, val) {
+    try { if (val === undefined) return window.localStorage.getItem("viewer." + key); window.localStorage.setItem("viewer." + key, val); }
+    catch (e) { return null; }
+  }
+  function foldable(cardId, headId, key) {
+    var card = $(cardId);
+    var saved = store(key);
+    card.classList.toggle("collapsed", saved === null ? narrow() : saved === "1");
+    $(headId).addEventListener("click", function (e) {         // the whole header (title strip or chevron) toggles
+      if (e.target.id === "infoX") return;
+      var c = !card.classList.contains("collapsed");
+      card.classList.toggle("collapsed", c); store(key, c ? "1" : "0");
+    });
+  }
+  foldable("panel", "pHead", narrow() ? "panelM" : "panelD");
+  foldable("info", "infoHead", narrow() ? "infoM" : "infoD");
+
+  // ---------------- panel ----------------
+  document.title = PR.title || document.title;
+  $("pTitle").textContent = PR.title || "";
+  $("pSub").innerHTML = PR.subtitle || ""; $("pSub").hidden = !PR.subtitle;
+  $("pAxes").innerHTML = PR.axesText || ""; $("pAxes").hidden = !PR.axesText;
+  $("hintD").textContent = L.hintDesk; $("hintM").textContent = L.hintTouch;
+  $("pFold").title = $("infoFold").title = L.fold; $("infoX").title = L.close;
+  $("bStep").textContent = L.step; $("lSlowT").textContent = L.slow; $("bReset").textContent = L.reset;
+  $("infoCenter").textContent = L.center; $("info").hidden = true;
+  ["bRun", "bStep", "lSlow", "bar", "curOp", "ops"].forEach(function (id) { $(id).hidden = !CYCLE; });
+  $("meta").hidden = !CYCLE && !PR.meta;
+  var opLis = OPS.map(function (o) {
+    var li = document.createElement("li");
+    li.innerHTML = o.name + (o.d ? "<small>" + o.d + "</small>" : "");
+    $("ops").appendChild(li); return li;
+  });
+
+  // ---------------- hover / select / card ----------------
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  var hovered = null, selected = null, HIDDEN = {};
+  var noPick = PR.noPick || [];
+  function glow(m, on, strong) {
+    if (!m) return;
+    (Array.isArray(m.material) ? m.material : [m.material]).forEach(function (x) {
+      if (x.emissive) x.emissive.setHex(on ? (strong ? 0xd9480f : 0x6a3a1a) : 0x000000);
+    });
+  }
+  function shown(o) { for (; o; o = o.parent) if (!o.visible) return false; return true; }
+  function pickAt(cx, cy) {                     // client px -> {object, point} of the nearest visible pickable, or null
+    var r = canvas.getBoundingClientRect();
+    ndc.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    var hits = ray.intersectObjects(pickables, false);
+    for (var i = 0; i < hits.length; i++) {
+      var o = hits[i].object;
+      if (shown(o) && !noPick.some(function (s) { return o.name.indexOf(s) >= 0; })) return hits[i];
+    }
+    return null;
+  }
+  function stemOf(name) { var i = name.lastIndexOf("_"); return i > name.indexOf("/") + 1 ? name.slice(0, i) : name; }
+  function sameStem(name) { var s = stemOf(name); return pickables.filter(function (m) { return m.name.indexOf(s + "_") === 0 || m.name === s; }); }
+  function updateShowAll() {
+    var n = Object.keys(HIDDEN).length;
+    $("bShowAll").hidden = n === 0; $("bShowAll").textContent = fmt(L.showAll, { n: n });
+  }
+  function refreshCardButtons() {
+    if (!selected) return;
+    var name = selected.name, h = !!HIDDEN[name], same = sameStem(name);
+    $("infoHide").textContent = h ? L.unhide : L.hide; $("infoHide").className = h ? "on" : "";
+    $("infoHideStem").hidden = same.length < 2; $("infoHideStem").textContent = fmt(L.hideStem, { n: same.length });
+  }
+  function setHidden(name, on) {
+    if (!name) return;
+    if (on) HIDDEN[name] = true; else delete HIDDEN[name];
+    pickables.forEach(function (m) { if (m.name === name) m.visible = !on; });
+    if (on && hovered && hovered.name === name) hovered = null;
+    refreshCardButtons(); updateShowAll();
+  }
+  function showAll() { Object.keys(HIDDEN).forEach(function (n) { setHidden(n, false); }); }
+  function select(m) {
+    if (selected !== m) glow(selected, false);
+    selected = m;
+    if (!m) { $("info").hidden = true; return; }
+    glow(m, true, true);
+    var d = describe(m) || { title: m.name.split("/").pop(), desc: "" };
+    var bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new V3()), c = bb.getCenter(new V3());
+    $("infoT").textContent = d.title; $("infoD").textContent = d.desc; $("infoD").hidden = !d.desc;
+    var rows = [[L.part, m.name], [L.motion, motionText(m)],
+      [L.size, mm(sz.x) + " × " + mm(sz.y) + " × " + mm(sz.z) + " " + L.mm],
+      [L.centre, "X " + mm(c.x) + " · Y " + mm(c.y) + " · Z " + mm(c.z)]];
+    $("infoP").innerHTML = rows.filter(function (r) { return r[1]; })
+      .map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
+    $("info").hidden = false;
+    refreshCardButtons();
+  }
+  $("infoX").addEventListener("click", function (e) { e.stopPropagation(); select(null); });
+  $("infoHide").addEventListener("click", function () { if (selected) setHidden(selected.name, !HIDDEN[selected.name]); });
+  $("infoHideStem").addEventListener("click", function () {
+    if (!selected) return;
+    sameStem(selected.name).forEach(function (m) { setHidden(m.name, true); });
+    select(null);
+  });
+  $("infoCenter").addEventListener("click", function () {
+    if (!selected) return;
+    var bb = new THREE.Box3().setFromObject(selected), sph = bb.getBoundingSphere(new THREE.Sphere());
+    flyTo({ target: sph.center, dist: sph.radius / Math.sin(camera.fov * Math.PI / 360) * 1.4 });
+  });
+  $("bShowAll").addEventListener("click", showAll);
+
+  // ---------------- camera: orbit (yaw, pitch, dist) around `target`; hash cam= uses the same six numbers ----------------
+  var VIEWS = (PR.views || []).map(function (v) { return { name: v.name, yaw: v.yaw, pitch: v.pitch, dist: v.dist, target: new V3().fromArray(v.target) }; });
+  if (!VIEWS.length) VIEWS.push({ name: "", yaw: -0.6, pitch: 0.5, dist: sceneSize * 0.4 / Math.sin(camera.fov * Math.PI / 360), target: sceneCentre.clone() });
+  var cam = { yaw: VIEWS[0].yaw, pitch: VIEWS[0].pitch, dist: VIEWS[0].dist, target: VIEWS[0].target.clone() };
+  var fly = null, view = 0;
+  function clampCam() {
+    cam.pitch = Math.max(PITCH_RANGE[0], Math.min(PITCH_RANGE[1], cam.pitch));
+    cam.dist = Math.max(ZOOM[0], Math.min(ZOOM[1], cam.dist));
+  }
+  function applyCamera() {
+    var cp = Math.cos(cam.pitch);
+    camera.position.set(cam.target.x + cam.dist * cp * Math.sin(cam.yaw), cam.target.y + cam.dist * Math.sin(cam.pitch), cam.target.z + cam.dist * cp * Math.cos(cam.yaw));
+    camera.lookAt(cam.target);
+    camera.updateMatrixWorld();
+  }
+  // smooth move of any subset of {yaw, pitch, dist, target}; user input cancels it
+  function flyTo(to, ms) {
+    var from = { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, target: cam.target.clone() };
+    fly = { from: from, to: Object.assign({}, from, to), t0: performance.now(), ms: ms || 400 };
+  }
+  function stepFly() {
+    if (!fly) return;
+    var u = ease(Math.min(1, (performance.now() - fly.t0) / fly.ms)), a = fly.from, b = fly.to;
+    cam.yaw = a.yaw + (b.yaw - a.yaw) * u; cam.pitch = a.pitch + (b.pitch - a.pitch) * u;
+    cam.dist = a.dist + (b.dist - a.dist) * u; cam.target.copy(a.target).lerp(b.target, u);
+    clampCam();
+    if (u >= 1) fly = null;
+  }
+  // new orbit pivot at a world point: keep the view direction, keep the camera about where it is, centre the point
+  function pivotTo(point) { flyTo({ target: point.clone(), dist: camera.position.distanceTo(point) }); }
+  function goView(i, smooth) {
+    view = i; var v = VIEWS[i];
+    if (smooth) flyTo({ yaw: v.yaw, pitch: v.pitch, dist: v.dist, target: v.target.clone() });
+    else { fly = null; cam.yaw = v.yaw; cam.pitch = v.pitch; cam.dist = v.dist; cam.target.copy(v.target); }
+    $("bView").textContent = fmt(L.view, { name: VIEWS[(i + 1) % VIEWS.length].name });
+  }
+  $("bView").hidden = VIEWS.length < 2;
+  $("bView").addEventListener("click", function () { goView((view + 1) % VIEWS.length, true); });
+  $("bReset").addEventListener("click", function () { goView(0, true); });
+  goView(0, false);
+  function panBy(from, dx, dy) {                // screen px drag -> target moves in the camera plane
+    var h = canvas.clientHeight || window.innerHeight;
+    var s = 2 * cam.dist * Math.tan(camera.fov * Math.PI / 360) / h;
+    var right = new V3().setFromMatrixColumn(camera.matrixWorld, 0), up = new V3().setFromMatrixColumn(camera.matrixWorld, 1);
+    cam.target.copy(from).addScaledVector(right, -dx * s).addScaledVector(up, dy * s);
+  }
+
+  // ---------------- pointer input: one pointer orbits (or pans with right button / Shift), two pointers pinch + pan ----------------
+  // Tap = select; double tap / double click = new orbit pivot at the hit point. Hiding lives on the card buttons only.
+  var ptrs = {}, gesture = null, lastTap = null, hoverEv = null;
+  var TAP_PX = 6, DOUBLE_MS = 400, DOUBLE_PX = 30;
+  function nPtrs() { return Object.keys(ptrs).length; }
+  function pair() { var ids = Object.keys(ptrs); return [ptrs[ids[0]], ptrs[ids[1]]]; }
+  function startGesture(e, mode) {
+    gesture = { mode: mode, x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch, target: cam.target.clone(), moved: 0, button: e.button || 0 };
+  }
+  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  canvas.addEventListener("pointerdown", function (e) {
+    if (canvas.setPointerCapture) try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+    ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    fly = null;
+    if (nPtrs() === 1) startGesture(e, (e.button === 2 || e.button === 1 || e.shiftKey) ? "pan" : "orbit");
+    else if (nPtrs() === 2) {
+      var p = pair();
+      gesture = { mode: "pinch", d0: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1, mx: (p[0].x + p[1].x) / 2,
+        my: (p[0].y + p[1].y) / 2, dist: cam.dist, target: cam.target.clone(), moved: Infinity };
+    }
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!ptrs[e.pointerId]) { if (e.pointerType === "mouse") hoverEv = e; return; }
+    ptrs[e.pointerId].x = e.clientX; ptrs[e.pointerId].y = e.clientY;
+    var g = gesture; if (!g) return;
+    if (g.mode === "pinch") {
+      if (nPtrs() < 2) return;
+      var p = pair(), d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1;
+      cam.dist = g.dist * g.d0 / d; clampCam();
+      panBy(g.target, (p[0].x + p[1].x) / 2 - g.mx, (p[0].y + p[1].y) / 2 - g.my);
+      return;
+    }
+    var dx = e.clientX - g.x, dy = e.clientY - g.y;
+    g.moved = Math.max(g.moved, Math.abs(dx) + Math.abs(dy));
+    if (g.moved <= TAP_PX) return;
+    stage.style.cursor = "grabbing";
+    if (g.mode === "pan") panBy(g.target, dx, dy);
+    else { cam.yaw = g.yaw - dx * 0.006; cam.pitch = g.pitch + dy * 0.005; clampCam(); }
+  });
+  function endPointer(e) {
+    if (!ptrs[e.pointerId]) return;
+    var wasTap = gesture && gesture.mode !== "pinch" && gesture.button === 0 && gesture.moved <= TAP_PX && nPtrs() === 1 && e.type === "pointerup";
+    delete ptrs[e.pointerId];
+    stage.style.cursor = "grab";
+    if (nPtrs() === 1) {                        // pinch -> one finger left: keep orbiting from here, never a tap
+      var id = Object.keys(ptrs)[0];
+      startGesture({ clientX: ptrs[id].x, clientY: ptrs[id].y }, "orbit"); gesture.moved = Infinity;
+    } else if (nPtrs() === 0) gesture = null;
+    if (wasTap) tap(e);
+  }
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", endPointer);
+  function tap(e) {
+    // event time, not handler time: on a slow GPU the second tap's handler can run long after the finger lifted
+    var now = e.timeStamp || performance.now(), h = pickAt(e.clientX, e.clientY);
+    if (lastTap && now - lastTap.t < DOUBLE_MS && Math.abs(e.clientX - lastTap.x) + Math.abs(e.clientY - lastTap.y) < DOUBLE_PX) {
+      lastTap = null;
+      if (h) pivotTo(h.point);
+      return;
+    }
+    lastTap = { t: now, x: e.clientX, y: e.clientY };
+    select(h ? h.object : null);
+  }
+  canvas.addEventListener("wheel", function (e) {
+    e.preventDefault(); fly = null;
+    cam.dist *= 1 + Math.max(-0.5, Math.min(0.5, e.deltaY * 0.001)); clampCam();
+  }, { passive: false });
+  canvas.addEventListener("pointerleave", function () { hoverEv = null; if (hovered && hovered !== selected) glow(hovered, false); hovered = null; });
+  function doHover() {                           // at most one hover raycast per frame, mouse only
+    if (!hoverEv || gesture) return;
+    var h = pickAt(hoverEv.clientX, hoverEv.clientY), m = h ? h.object : null; hoverEv = null;
+    if (m !== hovered) { if (hovered && hovered !== selected) glow(hovered, false); hovered = m; if (m && m !== selected) glow(m, true); }
+    stage.style.cursor = m ? "pointer" : "grab";
+  }
+
+  // ---------------- time ----------------
+  var running = !!CYCLE, slow = true, t = 0, stepTo = null, cycles = 0;
+  var bRun = $("bRun");
+  function setRunning(on) { running = on; stepTo = null; bRun.textContent = on ? L.pause : L.play; bRun.className = on ? "on" : ""; }
+  setRunning(running);
+  bRun.addEventListener("click", function () { setRunning(!running); });
+  $("slow").addEventListener("change", function (e) { slow = e.target.checked; });
+  $("bStep").addEventListener("click", function () {
+    setRunning(false);
+    var next = OPS.filter(function (o) { return o.t1 > t + 1e-3; })[0];
+    stepTo = next ? next.t1 - 1e-3 : CYCLE;
+  });
+
+  // ---------------- URL hash: #t=1.45&cam=yaw,pitch,dist,tx,ty,tz&hide=node/a,node/b (read at load and on change) ----------------
+  function applyHash() {
+    var q = {};
+    (location.hash || "").slice(1).split("&").forEach(function (kv) { var i = kv.indexOf("="); if (i > 0) q[kv.slice(0, i)] = kv.slice(i + 1); });
+    if (q.t && CYCLE) { setRunning(false); t = ((parseFloat(q.t) || 0) % CYCLE + CYCLE) % CYCLE; }
+    if (q.cam) {
+      var c = q.cam.split(",").map(parseFloat);
+      if (c.length === 6 && c.every(isFinite)) { fly = null; cam.yaw = c[0]; cam.pitch = c[1]; cam.dist = c[2]; cam.target.set(c[3], c[4], c[5]); }
+    }
+    showAll();
+    if (q.hide) decodeURIComponent(q.hide).split(",").forEach(function (n) { if (n) setHidden(n, true); });
+  }
+  if (PR.pose) PR.pose(0, 0);                     // create live meshes (tubes) first, so &hide= can name them
+  applyHash();
+  window.addEventListener("hashchange", applyHash);
+
+  // ---------------- frame loop ----------------
+  var dims = { w: 1, h: 1 };
+  function resize() {
+    var w = window.innerWidth || 1, h = window.innerHeight || 1;
+    renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); dims = { w: w, h: h };
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  var clock = new THREE.Clock(), tmp = new V3(), tgBox = new THREE.Box3();
+  function setTime(tt) {                        // pose everything at cycle time tt (also used by harness / tests)
+    t = tt;
+    if (PR.pose) PR.pose(t, cycles);
+    if (!CYCLE) return;
+    var cur = -1;
+    OPS.forEach(function (o, i) { if (t >= o.t0 && t < o.t1) cur = i; });
+    opLis.forEach(function (li, i) { li.className = i === cur ? "on" : ""; });
+    $("curOp").textContent = cur >= 0 ? (cur + 1) + ". " + OPS[cur].name : "·";
+    $("barFill").style.width = (t / CYCLE * 100).toFixed(1) + "%";
+  }
+  var api = window.__viewer = { frames: 0 };
+  function frame() {
+    var dt = Math.min(clock.getDelta(), 0.05) / (slow ? 5 : 1);
+    if (CYCLE) {
+      if (running) t += dt;
+      else if (stepTo !== null) { t = Math.min(stepTo, t + dt); if (t >= stepTo) stepTo = null; }
+      if (t >= CYCLE) { t -= CYCLE; cycles++; }
+    }
+    setTime(t);
+    stepFly(); doHover(); applyCamera();
+    renderer.render(scene, camera);
+    TAGS.forEach(function (tg) {
+      if (tg.p) tmp.copy(tg.p); else { tgBox.setFromObject(tg.o); tgBox.getCenter(tmp); tmp.y = tgBox.max.y; }
+      tmp.x += tg.dx || 0; tmp.y += tg.dy || 0; tmp.project(camera);
+      var vis = tmp.z < 1 && cam.dist >= (tg.minDist || 0) && cam.dist <= (tg.maxDist || Infinity);
+      tg.el.style.display = vis ? "block" : "none";
+      tg.el.style.left = ((tmp.x + 1) / 2 * dims.w) + "px"; tg.el.style.top = ((1 - tmp.y) / 2 * dims.h) + "px";
+    });
+    $("meta").textContent = PR.meta ? PR.meta(t, cycles) : fmt(L.time, { t: t.toFixed(2) });
+    api.frames++;
+    requestAnimationFrame(frame);
+  }
+
+  // ---------------- test / review hooks (shoot.py, test_controls.py, harness.js) ----------------
+  api.state = function () {
+    return { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, target: cam.target.toArray(), t: t, running: running,
+      selected: selected ? selected.name : null, hidden: Object.keys(HIDDEN), flying: !!fly,
+      infoOpen: !$("info").hidden, infoCollapsed: $("info").classList.contains("collapsed"),
+      panelCollapsed: $("panel").classList.contains("collapsed") };
+  };
+  api.pick = function (cx, cy) { var h = pickAt(cx, cy); return h ? { name: h.object.name, point: h.point.toArray() } : null; };
+  // fraction of a 24x16 grid of view rays that hit a visible part: ~0 means a blank frame (camera inside a solid / looking away)
+  api.coverage = function () {
+    var n = 0, hit = 0;
+    for (var i = 0; i < 24; i++) for (var j = 0; j < 16; j++) {
+      n++; if (pickAt(dims.w * (i + 0.5) / 24, dims.h * (j + 0.5) / 16)) hit++;
+    }
+    return hit / n;
+  };
+  api.setTime = setTime;
+  api.groups = groups;
+  api.cycle = CYCLE;
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# ADS1220 log matrix: 60 s of RAW signed codes per state, same cable, no load on the cell. Lines starting with # are ignored.
+# t_s    = seconds (any origin, monotonic within a state)
+# state  = A  drivers unpowered | B  powered, EN disabled | C  enabled, holding | D  as C, motors unplugged
+#          E@A / E@C  internal short MUX=1110b in state A / C | F@A / F@C  dummy resistor/short instead of the cell in A / C
+#          G  as C, laptop on battery or USB isolated      (extra states allowed, e.g. C_20g = C with a 20 g weight)
+# code   = raw 24-bit two's complement already sign-extended (e.g. -1234), NOT filtered/averaged
+# temp_c = optional (driver or board temperature)
+# Record the config next to the file: VREF source + volts, gain, data rate, excitation volts, cell mV/V and capacity.
+t_s,state,code,temp_c

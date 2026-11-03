@@ -1,0 +1,4 @@
+RobTillaart/HX711 tag 0.6.5
+commit e7ef415f81dc324a64a726f895d63c832b5aa5b6
+https://github.com/RobTillaart/HX711 (vendored unchanged)
+NOTE: the firmware calls set_gain(HX711_CHANNEL_A_GAIN_64), which exists only in this library, not in bogde/HX711.

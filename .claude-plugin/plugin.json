@@ -1,0 +1,12 @@
+{
+  "name": "design-engineer",
+  "version": "0.3.0",
+  "description": "The digital twin of a device as code, built by AI agents in any folder of Claude Code: one parameters file, build123d mechanics, electrics and firmware on a virtual board, checks of the whole cycle, a 3D viewer on localhost where you draw notes on the model, download kits, and a manager + executor team. `de init` starts a project.",
+  "author": {
+    "name": "nkvch",
+    "url": "https://github.com/nkvch"
+  },
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/nkvch/design-engineer",
+  "repository": "https://github.com/nkvch/design-engineer"
+}

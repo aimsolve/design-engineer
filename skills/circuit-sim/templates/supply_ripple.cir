@@ -1,0 +1,20 @@
+* Stepper-driver chopper ripple on a shared 5 V bus, filtered two ways before AVDD / bridge excitation:
+*   avdd_lc : "ferrite bead" (its low-frequency model: a few uH + mOhm, read from the bead datasheet curve) + 10 uF
+*   avdd_rc : series resistor + 10 uF   (DC drop = Rrc * Iload, check it against the ADC's AVDD minimum)
+* A bead is an RF part: at 20-60 kHz it is just a small inductor, and bead + 10 uF resonates near the chopper
+* frequency -> ripple can be AMPLIFIED. Values below are placeholders; replace with the client's parts.
+* AC: probe v(avdd_lc),v(avdd_rc) ref v(bus). TRAN: skip ~1 ms of start-up ringing.
+.param fch=35.1k Vrip=0.05 Lfb=2.2u Rfb=0.05 Cb=10u ESR=0.01 Rrc=10 Iload=3m
+Vbus bus 0 DC 5 AC 1 SIN(5 {Vrip} {fch})
+Lfb bus a {Lfb}
+Rfb a avdd_lc {Rfb}
+Cb1 avdd_lc c1 {Cb}
+Re1 c1 0 {ESR}
+Cs1 avdd_lc 0 100n
+Il1 avdd_lc 0 DC {Iload}
+Rrc bus avdd_rc {Rrc}
+Cb2 avdd_rc c2 {Cb}
+Re2 c2 0 {ESR}
+Cs2 avdd_rc 0 100n
+Il2 avdd_rc 0 DC {Iload}
+.end

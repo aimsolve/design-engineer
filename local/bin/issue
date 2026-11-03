@@ -1,0 +1,3 @@
+#!/bin/sh
+# `issue …` of the roles, local team mode: `de issue …`.
+exec "$(dirname "$0")/de" issue "$@"

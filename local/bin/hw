@@ -1,0 +1,3 @@
+#!/bin/sh
+# `hw …` of the skills, local mode: `de hw …`.
+exec "$(dirname "$0")/de" hw "$@"

@@ -1,0 +1,35 @@
+#!/bin/sh
+# de — the design engineer's local runtime (agent/de/cli.py). Works through a symlink (install.sh links it into ~/.local/bin).
+# The Python environment lives outside the plugin folder (Claude Code copies a plugin into its cache, versioned): one venv
+# per machine, $DE_VENV, synced to this copy's uv.lock on the first run; the code itself always comes from this copy.
+self=$0
+while [ -L "$self" ]; do
+  t=$(readlink "$self"); case $t in /*) self=$t ;; *) self=$(dirname "$self")/$t ;; esac
+done
+DE_ROOT=$(cd "$(dirname "$self")/../.." && pwd)
+export DE_ROOT
+# A Claude Code started from a GUI often has no ~/.local/bin on PATH: look where the uv installer puts it.
+command -v uv >/dev/null 2>&1 || for u in "$HOME/.local/bin" "$HOME/.cargo/bin"; do [ -x "$u/uv" ] && PATH=$u:$PATH && break; done
+command -v uv >/dev/null 2>&1 || { echo "de: needs uv (https://docs.astral.sh/uv/): curl -LsSf https://astral.sh/uv/install.sh | sh" >&2; exit 127; }
+V=${DE_VENV:-${XDG_DATA_HOME:-$HOME/.local/share}/design-engineer/venv}
+PYTHONPATH="$DE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH
+unset VIRTUAL_ENV
+# Sync only when this copy's uv.lock is not the one the venv was synced to (a stamp per lock), and --inexact: extras and test
+# tools someone added stay. Every other call runs the venv's python at once (hooks run on every tool call).
+stamp="$V/.de-lock-$(cksum < "$DE_ROOT/uv.lock" | cut -d' ' -f1)"
+if [ ! -x "$V/bin/python" ] || [ ! -f "$stamp" ]; then
+  # one sync at a time (sessions and hooks start `de` in parallel; two syncs into one venv left it without bin/)
+  mkdir -p "$(dirname "$V")"; n=0
+  until mkdir "$V.sync-lock" 2>/dev/null; do
+    n=$((n + 1)); [ $n -gt 900 ] && { echo "de: $V.sync-lock held for 15 min; remove it if no sync runs" >&2; exit 1; }
+    sleep 1
+  done
+  trap 'rmdir "$V.sync-lock" 2>/dev/null' EXIT INT TERM
+  if [ ! -x "$V/bin/python" ] || [ ! -f "$stamp" ]; then
+    UV_PROJECT_ENVIRONMENT=$V uv sync --quiet --frozen --no-dev --inexact --python 3.12 --project "$DE_ROOT" || exit $?
+    rm -f "$V"/.de-lock-* && touch "$stamp"
+  fi
+  rmdir "$V.sync-lock" 2>/dev/null; trap - EXIT INT TERM
+fi
+exec "$V/bin/python" -m de.cli "$@"

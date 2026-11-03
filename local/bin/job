@@ -1,0 +1,3 @@
+#!/bin/sh
+# `job …` of the skills, local mode: `de job …`.
+exec "$(dirname "$0")/de" job "$@"

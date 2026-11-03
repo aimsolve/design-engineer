@@ -1,0 +1,8 @@
+# Renode script. Variables $bin, $uart, $repl are set by run.sh ($repl = generated fake_adc.repl with an absolute path).
+mach create "stm32f4"
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+machine LoadPlatformDescription $repl
+sysbus.usart2 CreateFileBackend $uart true
+sysbus LoadELF $bin
+emulation RunFor "00:00:02"
+quit

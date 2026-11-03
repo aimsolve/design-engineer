@@ -1,0 +1,13 @@
+{
+ "version": 1,
+ "files": {
+  "i18n/catalog_i18n.py": {
+   "level": "catalog",
+   "sha1": "658c801319af9213554d90f76c8b1828009da2f5"
+  },
+  "profile/alu_profile.py": {
+   "level": "catalog",
+   "sha1": "efa2559492b7ce9571ba16be0a67ee8b55448a64"
+  }
+ }
+}

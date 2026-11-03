@@ -1,0 +1,2 @@
+GyverLibs/GyverBus 2.6.1 (branch main, downloaded 2026-10-20), src/GBUS.h GyverBus.h GyverBus.cpp vendored unchanged. MIT.
+https://github.com/GyverLibs/GyverBus

@@ -1,0 +1,14 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('hand written fixture: a STEP with geometry but no product structure'),'2;1');
+FILE_NAME('synthetic_no_products.step','2026-10-26T10:00:00',('fixture'),('design-engineer'),'','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1=APPLICATION_CONTEXT('automotive design');
+#2=CARTESIAN_POINT('',(0.,0.,0.));
+#3=DIRECTION('',(0.,0.,1.));
+#4=DIRECTION('',(1.,0.,0.));
+#5=AXIS2_PLACEMENT_3D('',#2,#3,#4);
+ENDSEC;
+END-ISO-10303-21;

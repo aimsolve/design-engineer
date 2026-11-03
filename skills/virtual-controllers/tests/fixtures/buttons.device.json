@@ -1,0 +1,100 @@
+{
+ "boards": [
+  {
+   "id": "mcu",
+   "part": "esp32_devkit",
+   "model": "esp32",
+   "fw": "buttons"
+  }
+ ],
+ "elements": [
+  {
+   "id": "btn_play",
+   "part": "tact_switch",
+   "model": "button",
+   "board": "mcu",
+   "params": {
+    "key": "Space",
+    "label": "Play"
+   },
+   "ports": {
+    "1": {
+     "board": "mcu",
+     "pin": 27
+    },
+    "2": {
+     "rail": "gnd"
+    }
+   }
+  },
+  {
+   "id": "btn_hi",
+   "part": "tact_switch",
+   "model": "button",
+   "board": "mcu",
+   "params": {
+    "label": "Hi"
+   },
+   "ports": {
+    "1": {
+     "board": "mcu",
+     "pin": 26
+    },
+    "2": {
+     "rail": "vcc"
+    }
+   }
+  },
+  {
+   "id": "btn_clean",
+   "part": "tact_switch",
+   "model": "button",
+   "board": "mcu",
+   "params": {
+    "bounce_ms": 0
+   },
+   "ports": {
+    "1": {
+     "board": "mcu",
+     "pin": 14
+    },
+    "2": {
+     "rail": "gnd"
+    }
+   }
+  },
+  {
+   "id": "enc",
+   "part": "ec11",
+   "model": "encoder",
+   "board": "mcu",
+   "params": {
+    "keys": [
+     "ArrowLeft",
+     "ArrowRight"
+    ],
+    "push_key": "Enter"
+   },
+   "ports": {
+    "A": {
+     "board": "mcu",
+     "pin": 32
+    },
+    "B": {
+     "board": "mcu",
+     "pin": 33
+    },
+    "C": {
+     "rail": "gnd"
+    },
+    "SW": {
+     "board": "mcu",
+     "pin": 25
+    },
+    "SW2": {
+     "rail": "gnd"
+    }
+   }
+  }
+ ]
+}

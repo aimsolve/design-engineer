@@ -1,0 +1,24 @@
+#!/bin/sh
+# Claude Code hook entry (hooks/hooks.json). Returns at once, before any Python or uv, unless this is a local project:
+# on the platform (ENGINEER_API is set in every project container) and in any folder without .engineer/mode = local up the
+# tree, the plugin's hooks do nothing. The project is the hook input's "cwd", else $CLAUDE_PROJECT_DIR, else here.
+[ -n "$ENGINEER_API" ] && exit 0
+inp=$(cat)
+# PostToolUse fires after every tool (an executor hears its manager at once); anyone else only cares about edits.
+if [ "$1" = post-tool ] && [ "$ENG_LANE" != exec ]; then
+  printf '%s' "$inp" | grep -Eq '"tool_name"[[:space:]]*:[[:space:]]*"(Edit|Write|MultiEdit)"' || exit 0
+fi
+d=$(printf '%s' "$inp" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+d=${d:-${CLAUDE_PROJECT_DIR:-$PWD}}
+while :; do
+  [ "$(cat "$d/.engineer/mode" 2>/dev/null)" = local ] && break
+  [ "$d" = / ] || [ "$d" = . ] && exit 0
+  d=$(dirname "$d")
+done
+# PreToolUse only guards the manager of a team-mode project (it never edits the model): nothing to do anywhere else.
+if [ "$1" = pre-tool ] && { [ "$ENG_LANE" = exec ] || [ "$(cat "$d/.engineer/lanes" 2>/dev/null)" != team ]; }; then exit 0; fi
+# Exit 2 would make Claude Code block the prompt / the tool: only `de hook` itself decides that (by JSON on stdout); any failure
+# of the runtime (uv, Python) is a plain error that the session shows and goes past.
+printf '%s' "$inp" | "$(dirname "$0")/de" hook "$@"
+rc=$?
+[ "$rc" = 0 ] || { echo "design-engineer hook $1 failed (exit $rc); see the message above" >&2; exit 1; }

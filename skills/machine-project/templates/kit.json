@@ -1,0 +1,17 @@
+{
+ "inputs": ["mechanics/cad/*.py", "mechanics/cad/parts/**/*.py", "mechanics/cad/library/**/*", "mechanics/cad/vendor/*"],
+ "timeout": 3600,
+ "site": "sh sim/site.sh",
+ "scopes": {
+  "bought": {"export": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py bought build/kit/bought.json",
+             "timeout": 300},
+  "step":   {"export": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py step build/kit/step.json",
+             "timeout": 1200},
+  "print":  {"export": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py print build/kit/print.json",
+             "part": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py print {manifest} {part}",
+             "timeout": 1200},
+  "laser":  {"export": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py laser build/kit/laser.json",
+             "part": "S=${DE_ROOT:-/opt/design-engineer}/skills/machine-project/scripts; python $S/derive.py laser {manifest} {part}",
+             "timeout": 3600}
+ }
+}

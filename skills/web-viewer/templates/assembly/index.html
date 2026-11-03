@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title></title>
+<!-- One page for every project: this file and the code under /_viewer/ are served by the stack straight from the framework;
+     the project folder holds only data. config.json says the title, whether there are a sim / baked edges / a cycle, and the build stamp. -->
+<link rel="icon" href="data:,">
+<style>
+  :root { --fs:14px; --bg:#eef2f5; --ink:#1d2730; --muted:#5b6873; --acc:#d9480f; --panel:#ffffffee; --line:#cfd8df; --sel:#fbdcf3; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--ink);
+               font:var(--fs)/1.4 -apple-system, system-ui, sans-serif; }
+  #stage { position:fixed; inset:0; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #stage canvas { display:block; touch-action:none; }
+  .card { position:fixed; z-index:5; background:var(--panel); backdrop-filter:blur(6px); border:1px solid var(--line);
+          border-radius:10px; padding:8px 12px 10px; overflow:auto; }
+  .head { display:flex; align-items:center; gap:4px; min-height:30px; cursor:pointer; }
+  .ttl { flex:1; min-width:0; font-weight:700; font-size:calc(var(--fs) + 1px); }
+  .collapsed .ttl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .collapsed .body { display:none; }
+  #pLang { border:0; background:none; font:inherit; font-size:calc(var(--fs, 14px) - 2px); color:var(--muted); padding:2px 0; cursor:pointer; }
+  .icon { border:0; background:none; font-size:18px; line-height:1; padding:4px 8px; cursor:pointer; color:var(--ink); }
+  .fold::before { content:"▾"; } .collapsed .fold::before { content:"▸"; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; align-items:center; }
+  button, .btn { font:inherit; padding:6px 12px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer;
+                 color:var(--ink); text-decoration:none; display:inline-block; }
+  button.on { background:var(--acc); color:#fff; border-color:var(--acc); }
+  .sub { color:var(--muted); font-size:calc(var(--fs) - 2px); margin:6px 0; }
+  .hint { color:var(--muted); font-size:calc(var(--fs) - 3px); margin-top:8px; border-top:1px solid var(--line); padding-top:6px; }
+  #panel { top:16px; left:16px; width:360px; max-width:calc(100vw - 32px); max-height:calc(100vh - 32px); display:flex; flex-direction:column; overflow:hidden; }
+  #panel .body { display:flex; flex-direction:column; min-height:0; flex:1; }
+  #panel.collapsed .body { display:none; }
+  #load { font-size:12px; color:var(--muted); margin-top:4px; }
+  #bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:6px; }
+  #barFill { height:100%; width:0; background:var(--acc); }
+  #q { width:100%; font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; margin-top:6px; }
+  #tree { flex:1; min-height:80px; overflow:auto; margin-top:6px; border-top:1px solid var(--line); padding-top:4px; }
+  .tr { display:flex; align-items:center; gap:2px; padding:2px 2px; border-radius:4px; cursor:pointer; }
+  .tr.sel { background:var(--sel); font-weight:600; }
+  .tr.dim { opacity:.4; }
+  .tr .car { width:18px; text-align:center; color:var(--muted); flex:none; }
+  .tr .lbl { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tr .dn { color:var(--muted); font-size:calc(var(--fs) - 3px); font-variant-numeric:tabular-nums; margin-right:4px; }
+  .tr .k { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; flex:none; }
+  .tr .eye { padding:2px 6px; font-size:14px; border:0; background:none; flex:none; opacity:.75; }
+  .tr .eye.off { opacity:.35; text-decoration:line-through; }
+  .more { color:var(--muted); font-size:12px; padding:4px; }
+  #info { top:16px; right:16px; width:340px; max-width:calc(100vw - 32px); max-height:calc(100vh - 32px); }
+  #infoP { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; margin:6px 0; font-size:calc(var(--fs) - 2px); }
+  #infoP dt { color:var(--muted); } #infoP dd { margin:0; font-variant-numeric:tabular-nums; word-break:break-word; }
+  #info .row button, #info .row .btn { flex:1 1 auto; text-align:center; }
+  .legend { display:flex; gap:10px; font-size:calc(var(--fs) - 3px); color:var(--muted); margin-top:6px; flex-wrap:wrap; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px; border:1px solid #0002; }
+  .mob { display:none; }
+  /* high contrast (weak eyesight): bigger type, white page, darker text, stronger panel borders */
+  :root.hc { --fs:18px; --bg:#ffffff; --ink:#000; --muted:#26313b; --line:#5b6873; --panel:#fffffff5; --sel:#ffc8ef; }
+  .hc #panel { width:460px; } .hc #info { width:430px; }
+  .hc button, .hc .btn { border-width:2px; border-color:#26313b; }
+  .hc button.on { background:#0b3d91; border-color:#0b3d91; }
+  #fxNote { margin:2px 0 4px; }
+  @media (max-width:700px) {
+    #panel { top:8px; left:8px; right:8px; width:auto; max-width:none; max-height:50vh; padding:6px 10px 8px; }
+    #info { top:auto; bottom:8px; left:8px; right:8px; width:auto; max-width:none; max-height:45vh; border-radius:12px;
+            padding:6px 10px calc(8px + env(safe-area-inset-bottom)); }
+    button, .btn { padding:7px 10px; }
+    .desk { display:none; } .mob { display:block; }
+  }
+  #linkRow .btnlink { display:inline-block; padding:6px 10px; border:1px solid #c9d1d9; border-radius:8px; text-decoration:none; color:inherit; font-size:13px; }
+  /* Hallmark · component: viewer panel + board windows · genre: utilitarian tool UI · theme: existing viewer tokens (system sans, white glass cards, orange = action)
+   * pre-emit critique: P4 H4 E4 S5 R4 V3 */
+  :root { --ink-sel:#2b3640; --ok:#2b7a3d; --err:#c92a2a; --warn:#b26a00; --idle:#9aa5ae; --hair:#e1e7ec; --ghost:#3b4a57; }
+  button:hover:not(:disabled), .btn:hover { border-color:#9fb0bd; }
+  button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid #1c6dd0; outline-offset:1px; }
+  button:disabled { opacity:.55; cursor:default; }
+  button.primary { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; }
+  button.primary:hover:not(:disabled) { background:#c2410c; border-color:#c2410c; }
+  button.ghost { border-color:transparent; background:none; color:var(--ghost); padding:4px 6px; }
+  button.ghost:hover:not(:disabled) { border-color:transparent; color:var(--ink); text-decoration:underline; text-underline-offset:3px; }
+  .tools { display:flex; align-items:center; gap:4px; margin:4px 0 2px; flex-wrap:wrap; }
+  .tools #bReset::before { content:"⟲" / ""; margin-right:5px; }
+  .tools #linkRow { margin:0; }
+  .sec { border-top:1px solid var(--hair); padding:2px 0 6px; flex:none; }
+  .sec .sh { all:unset; display:flex; align-items:center; gap:6px; min-height:30px; cursor:pointer; font-weight:700; font-size:calc(var(--fs) - 1px); }
+  .sec .sh::after { content:"▾"; margin-left:auto; color:var(--muted); font-weight:400; padding:0 6px; }
+  .sec.collapsed .sh::after { content:"▸"; }
+  .sec .sh small { font-weight:400; color:var(--muted); font-size:12px; }
+  .sec.collapsed .sb { display:none; }
+  #panel .body { overflow:hidden !important; }   /* the panel scrolls as a whole only when .tight (fitPanel) or on short / narrow screens */
+  .sec:not(.grow) { flex:0 0 auto; min-height:0; display:flex; flex-direction:column; }
+  #vmSec { flex:0 1 auto; min-height:31px; }   /* the sim list gives way to the tree and scrolls inside; "Download files" never shrinks */
+  .sec:not(.grow) .sb, .sec:not(.grow) .secbody { overflow:auto; min-height:0; }
+  .sec.collapsed .secbody { display:none; }
+  #panel:not(.collapsed) { height:calc(100vh - 32px); }
+  @media (max-width:700px) { #panel:not(.collapsed) { height:50vh; } #panel .body { overflow:auto !important; } #panel .sec, #vmSec { flex:none !important; } }   /* phone: half a screen is too short to share, the sheet scrolls */
+  .sec:not(.grow) { overflow:hidden; }
+  .sec.grow:not(.collapsed) { flex:1 1 216px; min-height:216px; display:flex; flex-direction:column; }   /* floor = heading + search + the tree's 140px */
+  .sec.grow:not(.collapsed) .sb { flex:1; min-height:0; display:flex; flex-direction:column; }
+  #tree { min-height:140px; }
+  @media (max-height:700px) { #panel .body { overflow:auto !important; } }   /* short screen: the tree cannot get 140px, so the panel scrolls */
+  #panel .body.tight { overflow:auto !important; }   /* the same when the sections above leave the tree less than its 140px (set by fitPanel) */
+  #bShowAll { align-self:flex-start; margin-top:4px; color:var(--acc); }
+  /* "Colour": one choice of several = a segmented control */
+  #colRow { margin:2px 0 6px; }
+  #colRow .sub { margin:0; min-width:44px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; background:#fff; }
+  .seg button { border:0; border-radius:0; padding:4px 12px; background:none; }
+  .seg button + button:not([hidden]) { border-left:1px solid var(--line); }
+  .seg button.on { background:var(--ink-sel); color:#fff; }
+  .hc .seg button.on { background:#0b3d91; }
+  /* "View": independent on/off = switches */
+  #viewLbl { display:none; }
+  #viewRow { gap:2px 14px; margin:6px 0 2px; }
+  #viewRow button { border:0; background:none; padding:4px 0; display:inline-flex; align-items:center; gap:7px; color:var(--ink); }
+  #viewRow button::before { content:""; width:26px; height:14px; border-radius:8px; background:#cfd8df; flex:none;
+    box-shadow:inset 0 0 0 1px #0001; background-image:radial-gradient(circle at 7px 7px, #fff 5px, transparent 5.5px); transition:background-color .15s; }
+  #viewRow button.on::before { background-color:var(--ink-sel); background-image:radial-gradient(circle at 19px 7px, #fff 5px, transparent 5.5px); }
+  .hc #viewRow button { border:0; }
+  /* standard views: one click each, the one the camera is at is marked. Ink, not orange — orange stays «action» (downloads).
+     Compact on purpose: seven of them take two lines, and the panel has to stay short enough that "Download files" needs no scrolling */
+  #viewsRow { gap:3px; margin:0 0 4px; }
+  #viewsRow button { padding:3px 8px; font-size:calc(var(--fs) - 2px); }
+  #viewsRow button.on { background:var(--ink-sel); border-color:var(--ink-sel); color:#fff; }
+  .hc #viewsRow button.on { background:#0b3d91; border-color:#0b3d91; }
+  /* measuring grid and ruler */
+  #gridRow, #measRow { gap:6px 10px; margin:2px 0 0; }
+  #gridRow select { font:inherit; font-size:calc(var(--fs) - 1px); padding:2px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); }
+  #gridSize, #measOut { font-variant-numeric:tabular-nums; }
+  #measOut b { font-weight:600; color:var(--ink); font-size:var(--fs); }
+  #measSvg { position:fixed; inset:0; z-index:4; pointer-events:none; }
+  #measLbl { position:fixed; z-index:4; transform:translate(-50%, -50%); padding:2px 7px; border-radius:6px; border:1px solid var(--line);
+             background:var(--panel); font-size:calc(var(--fs) - 2px); font-variant-numeric:tabular-nums; white-space:nowrap; pointer-events:none; }
+  body.measuring #stage { cursor:crosshair; }
+  .legend { margin:2px 0 4px; gap:4px 10px; }
+  /* "Download files": a list of files, not a heap of buttons */
+  #kitRow { display:flex; flex-direction:column; gap:0; margin:0; }
+  #kitRow > .sub { display:none; }
+  #kitRow button { display:flex; justify-content:space-between; align-items:center; width:100%; text-align:left; border:0; border-bottom:1px solid var(--hair); border-radius:0; background:none; padding:6px 2px; }
+  #kitRow button::after { content:"↓" / ""; color:var(--muted); }
+  #kitRow button:hover:not(:disabled) { background:#f3f6f8; }
+  /* "Boards on the desk" */
+  #hwRow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:2px 0; }
+  #hwRow .hwCount { font-size:12px; color:var(--muted); }
+  /* board windows over the 3D */
+  #hwDock { position:fixed; z-index:6; left:392px; right:calc(16px + var(--app-w, 0px)); bottom:16px; display:flex; flex-wrap:wrap-reverse; align-items:flex-end; gap:10px; pointer-events:none; }
+  body.has-sim #hwDock { bottom:64px; }
+  .hwWin { pointer-events:auto; width:288px; background:var(--panel); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:10px; padding:6px 10px 8px; box-shadow:0 2px 10px #1d273014; }
+  .hwWin .hwH { display:flex; align-items:baseline; gap:6px; min-height:26px; cursor:pointer; }
+  .hwWin .hwN { font-weight:700; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hwWin .hwChip { font:11px/1 ui-monospace, Menlo, monospace; color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:3px 5px; }
+  .hwWin .hwH .icon { font-size:14px; padding:2px 4px; color:var(--muted); align-self:center; }
+  .hwWin .hwS { font-size:12px; color:var(--muted); margin:1px 0 6px; min-height:16px; }
+  .hwWin .hwS b { font-weight:600; color:var(--ink); } .hwWin .hwV { font-family:ui-monospace, Menlo, monospace; font-size:11px; }
+  .hwWin .hwS.ok b { color:var(--ok); } .hwWin .hwS.err { color:var(--err); } .hwWin .hwS.bot { color:var(--ink); }
+  .hwWin .hwP { height:3px; border-radius:2px; background:var(--hair); overflow:hidden; margin:-2px 0 7px; }
+  .hwWin .hwP i { display:block; height:100%; width:0; background:var(--acc); transition:width .3s linear; }
+  .hwWin .hwP.unk i { width:35%; background:var(--idle); animation:hwSlide 1.8s ease-in-out infinite; }
+  @keyframes hwSlide { 0% { margin-left:-35%; } 100% { margin-left:100%; } }
+  @media (prefers-reduced-motion: reduce) { .hwWin .hwP.unk i { animation:none; width:100%; opacity:.5; } }
+  .hwWin .hwA { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .hwWin .hwA .primary { min-width:96px; }
+  .hwWin .hwA .hwLogT { margin-left:auto; }
+  .hwWin .hwLogT::after { content:" ▸" / ""; } .hwWin.logOpen .hwLogT::after { content:" ▾" / ""; }
+  .hwWin .hwRst { color:var(--muted); font-size:12px; }
+  .hwWin select { font:inherit; padding:3px 6px; border:1px solid var(--line); border-radius:6px; width:100%; margin:0 0 6px; }
+  .hwWin .hwL { margin-top:8px; border-top:1px solid var(--hair); padding-top:6px; }
+  .hwWin .hwL .hwLB { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .hwWin .hwL .mon { border:0; background:none; padding:2px 0; display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--ink); }
+  .hwWin .hwL .mon::before { content:""; width:22px; height:12px; border-radius:7px; background:#cfd8df; background-image:radial-gradient(circle at 6px 6px, #fff 4px, transparent 4.5px); }
+  .hwWin .hwL .mon.on::before { background-color:var(--ok); background-image:radial-gradient(circle at 16px 6px, #fff 4px, transparent 4.5px); }
+  .hwWin pre.hwLog { margin:0; font:11px/1.35 ui-monospace, Menlo, monospace; background:#14181c; color:#d7e0e8; padding:5px 7px; border-radius:6px; height:150px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .hwWin.min .hwS { margin-bottom:0; } .hwWin.min .hwP, .hwWin.min .hwA, .hwWin.min .hwL, .hwWin.min select { display:none; }
+  .hwWin.min .hwH .hwFold::before { content:"▸"; } .hwWin .hwH .hwFold::before { content:"▾"; }
+  .hwWin.unknown .hwN { color:var(--muted); font-weight:600; }
+  /* the sim card / sim list: one line about the real board */
+  .hwLine { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0; }
+  .hwLine .primary { padding:4px 10px; }
+  /* floating windows (win.js) */
+  :root.wm-on { --app-top:0px !important; } :root.wm-appfree { --app-w:0px !important; }
+  .wm-on #appHead, .wm-on #bHead, .wm-on .hwWin .hwH { cursor:grab; }
+  .wDrag { cursor:grabbing !important; user-select:none; box-shadow:0 8px 28px #1d273033 !important; }
+  .wDrag * { cursor:grabbing !important; }
+  @media (min-width:701px) { #hwDock { display:contents; } .hwWin { position:fixed; z-index:6; } }
+  .wDocked { box-shadow:0 2px 10px #1d27301f; border-radius:10px !important; }
+  .wDocked .ttl, .wDocked .hwN { font-size:var(--fs); }
+  .wDocked .hwChip { display:none; } .wDocked .hwS { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #appPanel .st::before { content:none !important; } #appPanel .st.on { color:var(--ok); }
+  @media (max-width:700px) {
+    #hwDock, body.has-sim #hwDock { left:8px; right:8px; bottom:calc(8px + var(--app-h, 0px)); flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:6px; }
+    .hwWin { width:auto; } .hwWin pre.hwLog { height:110px; }
+  }
+</style>
+<script type="importmap">{"imports":{"three":"/_viewer/vendor/three.module.min.js"}}</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="panel" class="card">
+  <div class="head" id="pHead"><div class="ttl" id="pTitle"></div><select id="pLang"></select><button class="icon fold" id="pFold"></button></div>
+  <div id="load">…</div>
+  <div id="bar"><div id="barFill"></div></div>
+  <div class="body">
+    <div class="tools"><button id="bReset" class="ghost"></button><div class="row" id="linkRow" hidden></div></div>
+    <section class="sec" id="secView" data-k="view">
+      <h3 class="sh"></h3>
+      <div class="sb">
+        <div class="row" id="viewsRow"><button id="bViewFront"></button><button id="bViewBack"></button><button id="bViewLeft"></button><button id="bViewRight"></button><button id="bViewTop"></button><button id="bViewBottom"></button><button id="bViewIso"></button></div>
+        <div class="row" id="colRow"><span class="sub" id="colLbl"></span><span class="seg"><button id="bColCad" hidden></button><button id="bColMat"></button><button id="bColKind"></button></span></div>
+        <div class="legend" id="legend"></div>
+        <!-- the tools first, then the look; this order also wraps into two lines, and the panel has to stay short enough that "Download files" needs no scrolling -->
+        <div class="row" id="viewRow"><span class="sub" id="viewLbl"></span><button id="bGrid"></button><button id="bMeasure"></button><button id="bEdges"></button><button id="bAO"></button><button id="bHC"></button></div>
+        <div class="row" id="gridRow" hidden><span class="sub" id="gridLbl"></span><select id="gridStep"></select><span class="sub" id="gridSize"></span></div>
+        <div class="row" id="measRow" hidden><span class="sub" id="measOut"></span><button id="measClear" class="ghost" hidden></button></div>
+        <div class="sub" id="fxNote" hidden></div>
+      </div>
+    </section>
+    <section class="sec" id="secHw" data-k="hw" hidden>
+      <h3 class="sh"></h3>
+      <div class="sb"></div>
+    </section>
+    <section class="sec" id="secDl" data-k="dl" data-collapsed="1" hidden>
+      <h3 class="sh"></h3>
+      <div class="sb"></div>
+    </section>
+    <section class="sec grow" id="secParts" data-k="parts">
+      <h3 class="sh"></h3>
+      <div class="sb">
+        <input id="q" type="search" autocomplete="off" spellcheck="false">
+        <button id="bShowAll" class="ghost" hidden></button>
+        <div id="tree"></div>
+        <div class="hint desk" id="hintD"></div><div class="hint mob" id="hintM"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<svg id="measSvg" hidden aria-hidden="true"></svg><div id="measLbl" hidden aria-hidden="true"></div>
+<div id="hwDock"></div>
+<div id="info" class="card" hidden>
+  <div class="head" id="infoHead"><div class="ttl" id="infoT"></div><button class="icon fold" id="infoFold"></button><button class="icon" id="infoX">×</button></div>
+  <div class="body">
+    <dl id="infoP"></dl>
+    <div class="row" id="rowDl"><a class="btn" id="dlStep" download></a><a class="btn" id="dlStl" download></a></div>
+    <div class="row"><button id="infoHide"></button><button id="infoHideStem" hidden></button></div>
+    <div class="row"><button id="infoCenter"></button><button id="infoOnly" hidden></button></div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "/_viewer/vendor/jsm/loaders/GLTFLoader.js";
+import "/_viewer/win.js";
+import { createFx, makeLineMaterials, attachEdges, makeSpangle, spangleize } from "/_viewer/view_fx.js";
+import { DICT, LANGS, NAME_WORDS, resolveLang, switchLang } from "/_viewer/i18n.js";
+
+
+// Assembly viewer for imported CAD: model.glb (metres, Z-up, instanced) + parts.json catalogue + parts/<id>.step|stl.
+// Static site: no build step, no CDN. World units here are millimetres, Y up (the glTF is scaled x1000 and rotated).
+const V3 = THREE.Vector3;
+const LANG = await resolveLang(new URL("./", location.href)), L = DICT[LANG];   // ru | en | pl (i18n.mjs)
+const KIND_COLOR = { made: 0xc9d0d6, standard: 0x7c858e, purchased: 0x6b8bb0, unknown: 0xb0b0b0 };
+// material -> [colour, roughness, metalness, extra]. Restrained and realistic; the one saturated colour is printed plastic, so custom parts pop.
+const MAT_STYLE = {
+  steel: [0xb4bbc2, 0.42, 0.45], fastener: [0x868c92, 0.42, 0.7], bearing: [0xaeb6c0, 0.3, 0.9], rubber: [0x1b1c1e, 0.9, 0.0],
+  motor: [0x2c2f34, 0.5, 0.35], electronics: [0x2f7d52, 0.55, 0.1], pneumatic: [0x4a7fc0, 0.38, 0.55], printed: [0xff7a1a, 0.55, 0.0],
+  glass: [0xc4e6f0, 0.05, 0.0, { transparent: true, opacity: 0.28, depthWrite: false }], other: [0xa9a49b, 0.6, 0.1]
+};
+const MAT_ORDER = ["steel", "printed", "fastener", "bearing", "rubber", "motor", "electronics", "pneumatic", "glass", "other"];
+const $ = (id) => document.getElementById(id);
+const fmt = (s, o) => String(s).replace(/\{(\w+)\}/g, (_, k) => o[k]);
+const num = (v, d) => { const f = 10 ** d; return String(Math.round(v * f) / f).replace(".", L.decimal); };
+const api = (window.__viewer = { ready: false, frames: 0, tickers: [], selectHooks: [] });
+api.hash0 = location.hash;   // as opened: the page rewrites the hash once the model is up, a link's dl= must survive that (kit.mjs)
+
+// ---------------- renderer / scene ----------------
+const stage = $("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+renderer.setPixelRatio(dpr);
+stage.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xeef2f5);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a97a3, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(600, 1500, 900); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-900, 300, -700); scene.add(fill);
+{   // cheap studio environment (one small PMREM at start-up) so metals have something to reflect
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(40, 20, 40), new THREE.MeshBasicMaterial({ color: 0x9aa4ad, side: THREE.BackSide })));
+  const panel = (w, h, x, y, z, c) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m); };
+  panel(16, 6, 0, 9.5, 4, 0xffffff); panel(6, 10, -17, 4, 6, 0xf2f6ff); panel(6, 8, 17, 3, -8, 0xfff2e6); panel(30, 3, 0, -9, 0, 0x5c656e);
+  const pm = new THREE.PMREMGenerator(renderer);
+  scene.environment = pm.fromScene(env, 0.03).texture; scene.environmentIntensity = 0.8; pm.dispose();
+}
+const camera = new THREE.PerspectiveCamera(35, 1, 2, 100000);
+const fx = createFx(THREE, renderer, scene, camera), LM = makeLineMaterials(THREE), LINES = [];
+
+const mk = (c, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.55, metalness: 0.15, side: THREE.DoubleSide,
+  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }, o || {}));   // fills sit a hair behind their own edge lines
+// selection: magenta is in nobody's palette, so it reads over steel, orange plastic, green PCB and blue pneumatics alike
+const HI_LIGHT = mk(0xff8ee6, { emissive: 0x6a1a5c, roughness: 0.7, metalness: 0, envMapIntensity: 0.3 }), HI_STRONG = mk(0xff1fcf, { emissive: 0xa0087e, roughness: 0.7, metalness: 0, envMapIntensity: 0.3 });
+let COLMODE = "material", HAS_MAT = false, HAS_COL = false, HAS_DRAW = false, HAS_DENSITY = false, FLAT = false;   // COLMODE: cad (colours written in the STEP) | material | kind
+
+// ---- look: per-part material = class colour + a tiny deterministic jitter (hash of the part id), so neighbouring steel parts differ ----
+const VIEW = { edges: true, ao: true, hc: false };
+const PHONE = window.innerWidth <= 700 || (window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+try { const sv = JSON.parse(store("view") || "null"); if (sv) Object.assign(VIEW, { edges: sv.edges !== false, ao: sv.ao !== false, hc: !!sv.hc }); else if (PHONE) VIEW.ao = false; } catch (e) { if (PHONE) VIEW.ao = false; }
+const GLASS_RE = new RegExp(Object.values(NAME_WORDS.glass).join("|"), "i");   // guards and windows, by part name in any language (i18n.mjs NAME_WORDS)
+const hash32 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return h >>> 0; };
+const isGlass = (p) => !!p && (p.material === "glass" || GLASS_RE.test(p.name || ""));
+function isSheet(p) {          // galvanised sheet metal: a made steel part whose thickness estimate (volume / two biggest bbox sides) is a few mm
+  if (!p || p.material !== "steel" || p.kind !== "made" || !p.bbox_mm || !p.volume_mm3) return false;
+  const d = [0, 1, 2].map((i) => p.bbox_mm[1][i] - p.bbox_mm[0][i]).sort((x, y) => y - x);
+  const t = p.volume_mm3 / Math.max(1, d[0] * d[1]);
+  return t < 4.5 && d[1] > 40;
+}
+const PMAT = {}; let SPANGLE = null, SPANGLE_ON = true;
+function partMat(p) {
+  const id = p ? p.id : "?", cad = COLMODE === "cad" && HAS_COL && p && p.color, cls = cad ? "c:" + p.color : COLMODE === "material" && HAS_MAT ? (isGlass(p) ? "glass" : (p && p.material) || "other") : "k:" + (p ? p.kind : "unknown");
+  const sheet = SPANGLE_ON && cls === "steel" && isSheet(p);
+  const key = cls + "|" + (VIEW.hc ? "h" : "n") + "|" + (sheet ? "s" : "") + "|" + id;
+  if (PMAT[key]) return PMAT[key];
+  let col, rough, metal, extra = {};
+  if (cad) { col = parseInt(p.color.slice(1), 16); rough = 0.5; metal = 0.15; }
+  else if (cls.slice(0, 2) === "k:") { col = KIND_COLOR[cls.slice(2)] || KIND_COLOR.unknown; rough = 0.5; metal = 0.3; }
+  else { const st = MAT_STYLE[cls] || MAT_STYLE.other; col = st[0]; rough = st[1]; metal = st[2]; extra = st[3] || {}; }
+  if (cls !== "glass" && !cad) {   // CAD colours are the designer's choice: no jitter
+    const h = hash32(id), r1 = (h & 255) / 255 - 0.5, r2 = ((h >>> 8) & 255) / 255 - 0.5, r3 = ((h >>> 16) & 255) / 255 - 0.5;
+    const c = new THREE.Color(col), hsl = {}; c.getHSL(hsl);
+    const J = VIEW.hc ? 0.11 : 0.075;
+    let s2 = hsl.s * (1 + r3 * 0.5) + (cls === "steel" ? 0.03 : 0), l2 = hsl.l + r1 * 2 * J * (0.35 + 0.65 * Math.min(1, hsl.l / 0.45));
+    if (VIEW.hc) s2 = Math.min(0.9, s2 * 2.2 + 0.14);
+    c.setHSL((hsl.h + r2 * (VIEW.hc ? 0.09 : 0.05) + 1) % 1, Math.max(0, Math.min(1, s2)), Math.max(0.03, Math.min(0.96, l2)));
+    col = c.getHex();
+  } else if (VIEW.hc) { col = 0x8fd0ea; extra = Object.assign({}, extra, { opacity: 0.4 }); }
+  const m = mk(col, Object.assign({ roughness: rough, metalness: metal }, extra));
+  if (isGlass(p) && !m.transparent) { m.transparent = true; m.opacity = 0.28; m.depthWrite = false; }
+  if (FLAT) m.flatShading = true;
+  if (sheet && SPANGLE) spangleize(m, SPANGLE, VIEW.hc ? 0.1 : 0.16, 45);
+  return (PMAT[key] = m);
+}
+const baseMat = (p) => partMat(p);
+
+let UP = "y", CAT = null, PARTS = {}, MODNAME = {}, world = null, ROOT = null;
+const NODES = [];                 // every Object3D of the model, index = userData.n
+const BYPART = {};                // part id -> [mesh]
+let selected = null, dirty = true, needHash = false;
+let sceneBox = new THREE.Box3(), sceneSize = 5000, sceneCentre = new V3();
+
+const DRAW_RE = /\d\d\.\d\d\.\d\d\.\d{3}/;
+const isMesh = (o) => o.isMesh;
+const isAsm = (o) => !o.isMesh && o.children.length > 0;
+function rawName(o) { return o.userData.name || o.name || ""; }
+function drawingOf(o) {
+  if (o.isMesh && PARTS[o.userData.part] && PARTS[o.userData.part].drawing) return PARTS[o.userData.part].drawing;
+  const m = DRAW_RE.exec(rawName(o)); return m ? m[0] : "";
+}
+// A machine whose part names start with its product code ("<code> <drawing> <name>"): the code is dropped from labels. The code = a first word
+// with a digit that starts at least half of the names (found once parts.json is read).
+let NAME_PREFIX = null;
+function namePrefix() {
+  if (NAME_PREFIX !== null || !CAT) return NAME_PREFIX || "";
+  const n = {}, names = CAT.parts.map((p) => String(p.name || ""));
+  for (const nm of names) { const m = /^(\S*\d\S*)\s+\S/.exec(nm); if (m) n[m[1]] = (n[m[1]] || 0) + 1; }
+  const [top, c] = Object.entries(n).sort((a, b) => b[1] - a[1])[0] || ["", 0];
+  NAME_PREFIX = names.length >= 3 && c * 2 >= names.length && !DRAW_RE.test(top) ? top : "";
+  return NAME_PREFIX;
+}
+function shortName(name, drawing) {
+  let s = String(name); const pre = namePrefix();
+  if (pre && s.startsWith(pre + " ")) s = s.slice(pre.length).trim();
+  if (drawing && s.indexOf(drawing) === 0) s = s.slice(drawing.length).trim();
+  return s || name;
+}
+function labelOf(o) {
+  if (o.isMesh && PARTS[o.userData.part]) return shortName(PARTS[o.userData.part].name, PARTS[o.userData.part].drawing);
+  return shortName(rawName(o), drawingOf(o));
+}
+const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+function meshesUnder(o) { const r = []; o.traverse((c) => { if (c.isMesh) r.push(c); }); return r; }
+function invalidate() { dirty = true; needHash = true; }
+// a data file of this project with the build stamp: browsers (the Telegram one too) must not show the model of an older build (a client once kept seeing a stale model in an in-app browser)
+const dataUrl = (f) => (api.config && api.config.v ? f + (f.includes("?") ? "&" : "?") + "v=" + encodeURIComponent(api.config.v) : f);
+api.dataUrl = dataUrl;
+api.invalidate = invalidate; api.camera = camera; api.nodes = NODES; api.byPart = BYPART;
+
+// ---------------- load ----------------
+async function load() {
+  let cfg = {};
+  try { const c = await fetch("config.json", { cache: "no-store" }); if (c.ok) cfg = await c.json(); } catch (e) { /* optional */ }   // never cached: it carries the stamp of every other data URL
+  api.config = cfg;
+  const title = cfg.title || "CAD";
+  document.title = title; $("pTitle").textContent = title;
+  if (cfg.sim) document.body.classList.add("has-sim");
+  if ((cfg.links || []).length) {   // build.py --link "Label=url": project pages next to the model (e.g. a process animation)
+    const row = $("linkRow"); row.hidden = false;
+    for (const l of cfg.links) { const a = document.createElement("a"); a.textContent = l.label; a.href = l.url; a.className = "btnlink"; a.target = "_blank"; row.appendChild(a); }
+  }
+  const hu = /[#&]up=([a-z])/i.exec(location.hash);
+  UP = ((hu && hu[1]) || cfg.up || "y").toLowerCase();
+  const res = await fetch(dataUrl("parts.json"));
+  if (!res.ok) throw new Error("parts.json " + res.status);
+  CAT = await res.json();
+  CAT.parts.forEach((p) => (PARTS[p.id] = p));
+  const loader = new GLTFLoader();
+  const gltf = await new Promise((ok, fail) => {
+    loader.load(dataUrl("model.glb"), ok, (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        $("load").textContent = fmt(L.loading, { pct, a: num(e.loaded / 1048576, 1), b: num(e.total / 1048576, 1) });
+        $("barFill").style.width = pct + "%";
+      } else $("load").textContent = fmt(L.loading, { pct: "?", a: num(e.loaded / 1048576, 1), b: "?" });
+    }, fail);
+    $("load").textContent = L.loading.replace(/\{pct\}/, "0").replace(/\{a\}/, "0").replace(/\{b\}/, "?");
+  });
+  $("load").textContent = L.parsing;
+  await new Promise((r) => setTimeout(r, 0));
+  world = new THREE.Group();
+  if (UP === "z") world.rotation.x = -Math.PI / 2;   // model's up is Z (config.json up=z or #up=z): Z -> Y. up=y (default): glTF is Y-up, nothing to do
+  world.scale.setScalar(1000);          // metres -> millimetres
+  world.add(gltf.scene);
+  ROOT = gltf.scene.children[0];
+  api.model = gltf.scene;
+  scene.add(world);
+  world.updateMatrixWorld(true);
+  let tri = 0, nMesh = 0;
+  let flat = false;
+  HAS_MAT = CAT.parts.some((p) => p.material && p.material !== "other"); HAS_COL = CAT.parts.some((p) => p.color); HAS_DRAW = CAT.parts.some((p) => p.drawing); HAS_DENSITY = CAT.parts.some((p) => p.density);
+  const sm = store("colmode"); COLMODE = sm === "kind" || sm === "material" || (sm === "cad" && HAS_COL) ? sm : HAS_COL ? "cad" : "material";
+  try { SPANGLE = makeSpangle(THREE); } catch (e) { SPANGLE = null; }
+  gltf.scene.traverse((o) => {
+    o.userData.n = NODES.length; NODES.push(o);
+    if (o.isMesh) {
+      const p = PARTS[o.userData.part];
+      o.material = baseMat(p);
+      o.userData.base = o.material;
+      // Normals must come from the importer: creasing 2.6 M triangles in the browser froze slower machines on load.
+      if (!o.geometry.attributes.normal) flat = true;
+      (BYPART[o.userData.part] = BYPART[o.userData.part] || []).push(o);
+      nMesh++; tri += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3;
+      o.matrixAutoUpdate = false;
+    }
+  });
+  if (flat) { FLAT = true; [...Object.values(PMAT), HI_LIGHT, HI_STRONG].forEach((m) => { m.flatShading = true; m.needsUpdate = true; }); }
+  gltf.scene.traverse((o) => { if (!o.isMesh) o.matrixAutoUpdate = false; });
+  world.matrixAutoUpdate = false; world.updateMatrix();
+  sceneBox = boxOf(world);
+  sceneSize = sceneBox.getSize(new V3()).length(); sceneCentre = sceneBox.getCenter(new V3());
+  camera.near = Math.max(0.5, sceneSize * 0.0004); camera.far = sceneSize * 20; camera.updateProjectionMatrix();
+  // module names from the assembly nodes 'MM.00.00.000'
+  NODES.forEach((o) => {
+    const d = drawingOf(o);
+    if (d && /\.00\.00\.000$/.test(d) && !MODNAME[d.slice(0, 5)]) MODNAME[d.slice(0, 5)] = shortName(rawName(o), d).split("_")[0];
+  });
+  api.stats = { meshes: nMesh, triangles: tri, distinct: Object.keys(BYPART).length };
+  $("load").textContent = fmt(L.ready, { m: nMesh, p: api.stats.distinct, t: num(tri / 1e6, 2) });
+  $("barFill").parentElement.hidden = true;
+  return gltf.scene;
+}
+
+// ---------------- geometry helpers ----------------
+function boxOf(root, onlyShown) {          // world-space box of the (shown) meshes under root
+  const b = new THREE.Box3(), t = new THREE.Box3();
+  root.traverse((m) => {
+    if (!m.isMesh || (onlyShown && !shown(m))) return;
+    if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+    t.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); b.union(t);
+  });
+  return b;
+}
+const cam = { yaw: -0.6, pitch: 0.45, dist: 8000, target: new V3() };
+const TOP_PITCH = Math.PI / 2 - 0.0015;   // straight down / straight up, a hair off the pole where the camera's up vector is undefined (the Top / Bottom views)
+const PITCH = [-TOP_PITCH, TOP_PITCH];
+let ZOOM = [8, 30000];
+let fly = null;
+const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+function boxCorners(box) { const r = []; for (let i = 0; i < 8; i++) r.push(new V3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z)); return r; }
+function fitDist(box, yaw, pitch, margin, pts, ctr) {   // camera distance so the whole box (or the given points) is in view at this yaw/pitch
+  const c = ctr || box.getCenter(new V3()), cp = Math.cos(pitch);
+  const back = new V3(cp * Math.sin(yaw), Math.sin(pitch), cp * Math.cos(yaw));       // centre -> camera
+  const right = new V3().crossVectors(new V3(0, 1, 0), back).normalize(), up = new V3().crossVectors(back, right);
+  const tv = Math.tan((camera.fov * Math.PI) / 360), th = tv * camera.aspect;
+  let d = 0;
+  pts = pts || boxCorners(box);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i].clone().sub(c);
+    const z = p.dot(back);
+    d = Math.max(d, Math.abs(p.dot(right)) / th + z, Math.abs(p.dot(up)) / tv + z);
+  }
+  return d * (margin || 1.08);
+}
+let homePts = null;
+function fitView(yaw, pitch) {      // tight fit at this angle: corners of every mesh box (not the global box, which overshoots for a long thin machine), centred in the view plane
+  if (!homePts) { homePts = []; const t = new THREE.Box3(); world.traverse((m) => { if (m.isMesh) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); t.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); homePts.push(...boxCorners(t)); } }); }
+  const cp = Math.cos(pitch), back = new V3(cp * Math.sin(yaw), Math.sin(pitch), cp * Math.cos(yaw));
+  const right = new V3().crossVectors(new V3(0, 1, 0), back).normalize(), up = new V3().crossVectors(back, right);
+  const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], ax = [right, up, back];
+  homePts.forEach((p) => ax.forEach((a, i) => { const d = p.dot(a); if (d < lo[i]) lo[i] = d; if (d > hi[i]) hi[i] = d; }));
+  const ctr = new V3(); ax.forEach((a, i) => ctr.addScaledVector(a, (lo[i] + hi[i]) / 2));
+  return { yaw, pitch, dist: fitDist(sceneBox, yaw, pitch, 1.06, homePts, ctr), target: ctr };
+}
+const homeView = () => fitView(-0.6, 0.4);
+function applyCamera() {
+  const cp = Math.cos(cam.pitch);
+  camera.position.set(cam.target.x + cam.dist * cp * Math.sin(cam.yaw), cam.target.y + cam.dist * Math.sin(cam.pitch), cam.target.z + cam.dist * cp * Math.cos(cam.yaw));
+  camera.lookAt(cam.target); camera.updateMatrixWorld();
+}
+function clampCam() { cam.pitch = Math.max(PITCH[0], Math.min(PITCH[1], cam.pitch)); cam.dist = Math.max(ZOOM[0], Math.min(ZOOM[1], cam.dist)); }
+const CALM = matchMedia("(prefers-reduced-motion: reduce)");
+function flyTo(to, ms) {
+  if (CALM.matches) ms = 0;   // «less motion» in the OS: the view buttons put the camera there at once instead of flying
+  const from = { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, target: cam.target.clone() };
+  const at = Object.assign({}, from, to);
+  at.yaw = from.yaw + Math.atan2(Math.sin(at.yaw - from.yaw), Math.cos(at.yaw - from.yaw));   // the short way round: orbiting adds up, cam.yaw is never wrapped
+  fly = { from, to: at, t0: performance.now(), ms: ms === 0 ? 1 : ms || 400 };
+}
+function stepFly() {
+  if (!fly) return false;
+  const u = ease(Math.min(1, (performance.now() - fly.t0) / fly.ms)), a = fly.from, b = fly.to;
+  cam.yaw = a.yaw + (b.yaw - a.yaw) * u; cam.pitch = a.pitch + (b.pitch - a.pitch) * u;
+  cam.dist = a.dist + (b.dist - a.dist) * u; cam.target.copy(a.target).lerp(b.target, u);
+  clampCam(); if (u >= 1) fly = null; return true;
+}
+function frameObject(o) {
+  let b = boxOf(o, true); if (b.isEmpty()) b = boxOf(o, false);
+  if (b.isEmpty()) return;
+  flyTo({ target: b.getCenter(new V3()), dist: fitDist(b, cam.yaw, cam.pitch, 1.25) });
+}
+const pivotTo = (p) => flyTo({ target: p.clone(), dist: camera.position.distanceTo(p) });
+function panBy(from, dx, dy) {
+  const h = canvas.clientHeight || window.innerHeight, s = (2 * cam.dist * Math.tan((camera.fov * Math.PI) / 360)) / h;
+  const right = new V3().setFromMatrixColumn(camera.matrixWorld, 0), up = new V3().setFromMatrixColumn(camera.matrixWorld, 1);
+  cam.target.copy(from).addScaledVector(right, -dx * s).addScaledVector(up, dy * s);
+}
+
+// ---------------- picking ----------------
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pickAt(cx, cy) {
+  if (!world) return null;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const cand = [];
+  world.traverseVisible((o) => { if (o.isMesh) cand.push(o); });
+  const hits = ray.intersectObjects(cand, false);
+  return hits.length ? hits.find((h) => !h.object.material.transparent) || hits[0] : null;   // a guard/glass never steals the click from the part behind it
+}
+
+// ---------------- highlight / selection / card ----------------
+// Picked in the tree: the rest of the machine turns to faint glass (its edges off) so a part deep inside is seen. It stays while
+// the focus moves (a 3D click picks through the glass); ✕ or a click on empty space ends it
+const GHOST = mk(0xc3ccd4, { roughness: 0.9, metalness: 0, transparent: true, opacity: 0.1, depthWrite: false });
+let lit = [], ghosted = [], GHOSTING = false;
+const edgesOf = (m) => m.children.filter((c) => c.userData.edge);
+function unlight() {
+  lit.forEach((m) => (m.material = m.userData.base)); lit = [];
+  ghosted.forEach((m) => { m.material = m.userData.base; edgesOf(m).forEach((l) => (l.visible = VIEW.edges)); }); ghosted = [];
+}
+function light(node) {
+  unlight();
+  if (!node) return;
+  if (node.isMesh) {
+    (BYPART[node.userData.part] || []).forEach((m) => { m.material = HI_LIGHT; lit.push(m); });
+    node.material = HI_STRONG;
+  }                                            // assembly: no tint (a tinted module hides its own colours); framing + tree row mark it
+  if (!GHOSTING) return;
+  const keep = new Set(node.isMesh ? BYPART[node.userData.part] || [node] : meshesUnder(node));
+  NODES.forEach((m) => {
+    if (!m.isMesh || keep.has(m)) return;
+    m.material = GHOST; edgesOf(m).forEach((l) => (l.visible = false)); ghosted.push(m);
+  });
+}
+function sizeText(b) { const s = b.getSize(new V3()); return num(s.x, 1) + " × " + num(s.y, 1) + " × " + num(s.z, 1) + " " + L.mm; }
+function massText(kg) { return kg >= 1 ? num(kg, 2) + " " + L.kg : num(kg * 1000, 1) + " " + L.g; }
+function moduleText(d, mod) { if (mod && !/^\d\d\.\d\d$/.test(mod)) return mod;   // code-CAD group name (core, tower ...), not a drawing prefix
+  const m = d ? d.slice(0, 5) : ""; return m ? (MODNAME[m] ? m + " · " + MODNAME[m] : m) : "—"; }
+const hiddenStem = (n) => (BYPART[n.userData.part] || []).every((m) => !m.visible);
+
+function refreshCard() {
+  const o = selected; if (!o) return;
+  const stem = o.isMesh ? BYPART[o.userData.part] || [o] : [];
+  $("infoHide").textContent = o.isMesh ? (o.visible ? L.hide : L.unhide) : (o.visible ? L.hideAsm : L.unhideAsm);
+  $("infoHide").className = o.visible ? "" : "on";
+  $("infoHideStem").hidden = !(o.isMesh && stem.length > 1);
+  const allHid = stem.every((m) => !m.visible);
+  $("infoHideStem").textContent = fmt(allHid ? L.unhideStem : L.hideStem, { n: stem.length });
+  $("infoHideStem").className = allHid ? "on" : "";
+}
+function showCard(o) {
+  if (!o) { $("info").hidden = true; return; }
+  const d = drawingOf(o);
+  let rows;
+  if (o.isMesh) {
+    const p = PARTS[o.userData.part], b = boxOf(o);
+    $("infoT").textContent = p ? shortName(p.name, p.drawing) : labelOf(o);
+    rows = [[L.drawing, d || "—"], [L.kind, p ? L.kinds[p.kind] || p.kind : "—"], [L.material, p && p.material ? (L.materials[p.material] || p.material) + (HAS_DENSITY ? "" : L.matNote) : "—"], ...(p && p.thickness ? [[L.thickness, p.thickness]] : []), [L.module, moduleText(p ? p.module + ".00.00.000" : d, p && p.module)],
+      [L.count, p ? fmt(L.pcs, { n: p.instances }) : "—"]];
+    if (!HAS_DRAW) rows.splice(0, 2);            // code-CAD machine: no drawing numbers, every kind is "purchased" - the rows would be noise
+    if (!HAS_MAT) rows = rows.filter((r) => r[0] !== L.material);
+    if (p && p.bbox_mm) {
+      const s = [0, 1, 2].map((i) => p.bbox_mm[1][i] - p.bbox_mm[0][i]);
+      rows.push([L.size, num(s[0], 1) + " × " + num(s[1], 1) + " × " + num(s[2], 1) + " " + L.mm]);
+    } else rows.push([L.size, sizeText(b)]);
+    // parts.json `density` (g/cm3) = materials come from the model: no "from the name" note, mass = volume x density; a part without one is then bought,
+    // and its volume says nothing about its mass (both rows hidden). Without densities: the 7.85 g/cm3 estimate for every part.
+    if (p && p.volume_mm3 && (p.density || !HAS_DENSITY)) {
+      rows.push([L.volume, num(p.volume_mm3 / 1000, 1) + " " + L.cm3]);
+      rows.push([L.mass, p.density ? fmt(L.massNoteDensity, { m: massText(p.volume_mm3 * p.density * 1e-6) }) : fmt(L.massNote, { m: massText(p.volume_mm3 * 7.85e-6) })]);
+    }
+    const f = p && p.files;
+    $("rowDl").hidden = !f;
+    if (f) { $("dlStep").href = encodeURI(f.step); $("dlStl").href = encodeURI(f.stl); }
+  } else {
+    const ms = meshesUnder(o), ids = new Set(ms.map((m) => m.userData.part)), b = boxOf(o);
+    $("infoT").textContent = labelOf(o);
+    rows = [[L.drawing, d || "—"], [L.kind, L.asm], [L.module, moduleText(d)], [L.parts, ms.length + " (" + fmt(L.distinct, { n: ids.size }) + ")"], [L.size, sizeText(b)]];
+    if (!HAS_DRAW) rows = rows.filter((r) => r[0] !== L.drawing && r[0] !== L.module);
+    $("rowDl").hidden = true;
+  }
+  $("infoP").innerHTML = rows.map((r) => "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>").join("");
+  $("infoOnly").hidden = o.isMesh;
+  $("info").hidden = false;
+  refreshCard();
+}
+function select(o, opts) {
+  opts = opts || {};
+  selected = o || null;
+  GHOSTING = !!selected && (!!opts.ghost || GHOSTING);   // once on, a 3D click moves the focus and keeps the glass
+  light(selected); showCard(selected); renderTree(true);
+  api.selectHooks.forEach((f) => f(selected));
+  if (opts.frame && selected) frameObject(selected);
+  invalidate();
+}
+function setVisible(nodes, on) {
+  nodes.forEach((n) => { n.visible = on; });
+  refreshCard(); updateShowAll(); renderTree(); invalidate();
+}
+function updateShowAll() {
+  let n = 0; NODES.forEach((o) => { if (!o.visible) n++; });
+  $("bShowAll").hidden = n === 0; $("bShowAll").textContent = fmt(L.showAll, { n });
+}
+function showAll() { NODES.forEach((o) => (o.visible = true)); updateShowAll(); refreshCard(); renderTree(); invalidate(); }
+function isolate(node) {                  // show only this assembly: hide everything outside, show everything inside
+  NODES.forEach((o) => (o.visible = true));
+  for (let p = node; p !== ROOT && p.parent; p = p.parent)
+    p.parent.children.forEach((c) => { if (c !== p) c.visible = false; });
+  updateShowAll(); refreshCard(); renderTree(); invalidate();
+  frameObject(node);
+}
+$("infoX").addEventListener("click", (e) => { e.stopPropagation(); select(null); });
+$("infoHide").addEventListener("click", () => { if (selected) setVisible([selected], !selected.visible); });
+$("infoHideStem").addEventListener("click", () => {
+  if (!selected || !selected.isMesh) return;
+  const stem = BYPART[selected.userData.part], on = stem.every((m) => !m.visible);
+  setVisible(stem, on);
+});
+$("infoCenter").addEventListener("click", () => {
+  if (!selected) return;
+  const b = boxOf(selected, true), s = b.getBoundingSphere(new THREE.Sphere());
+  flyTo({ target: s.center, dist: Math.max(ZOOM[0], (s.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.4) });
+});
+$("infoOnly").addEventListener("click", () => { if (selected && !selected.isMesh) isolate(selected); });
+$("bShowAll").addEventListener("click", showAll);
+$("bReset").addEventListener("click", () => { const h = homeView(); flyTo(h); });
+
+// ---------------- tree ----------------
+const EXP = new Set();
+const hex = (c) => "#" + c.toString(16).padStart(6, "0");
+const KCOL = (p) => COLMODE === "cad" && HAS_COL && p.color ? p.color : hex(COLMODE === "material" && HAS_MAT ? (MAT_STYLE[p.material] || MAT_STYLE.other)[0] : KIND_COLOR[p.kind] || KIND_COLOR.unknown);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function rowHtml(o, depth, dim, siblingIdx, group) {
+  const has = isAsm(o), d = drawingOf(o), p = o.isMesh ? PARTS[o.userData.part] : null;
+  let lbl = labelOf(o);
+  if (siblingIdx) lbl += " #" + siblingIdx;
+  if (group) lbl += " × " + group.length;
+  const offAll = group ? group.every((m) => !m.visible) : !o.visible;
+  return '<div class="tr' + ((group ? group.includes(selected) : o === selected) ? " sel" : "") + (dim ? " dim" : "") + '" data-n="' + o.userData.n + '"' + (group ? ' data-grp="' + group.map((m) => m.userData.n).join(",") + '"' : "") + ' style="padding-left:' + (depth * 14 + 2) + 'px">' +
+    '<span class="car" data-car="1">' + (has ? (EXP.has(o) ? "▾" : "▸") : "") + "</span>" +
+    (p ? '<i class="k" style="background:' + KCOL(p) + '"></i>' : "") +
+    (d ? '<span class="dn">' + esc(d) + "</span>" : "") + '<span class="lbl" title="' + esc(labelOf(o)) + '">' + esc(lbl) + "</span>" +
+    '<button class="eye' + (offAll ? " off" : "") + '" data-eye="1" title="' + esc(offAll ? L.unhide : L.hide) + '">' + "👁" + "</button></div>";
+}
+function childrenRows(o, depth, dim, out) {
+  const seen = {};
+  o.children.forEach((c) => { const k = rawName(c); seen[k] = (seen[k] || 0) + 1; });
+  const idx = {}, grp = {};        // identical parts among siblings collapse into one row "name × N"
+  o.children.forEach((c) => { if (c.isMesh) (grp[c.userData.part] = grp[c.userData.part] || []).push(c); });
+  o.children.forEach((c) => {
+    const k = rawName(c); idx[k] = (idx[k] || 0) + 1;
+    const g = c.isMesh && grp[c.userData.part].length > 1 ? grp[c.userData.part] : null;
+    if (g && g[0] !== c) return;
+    out.push(rowHtml(c, depth, dim || !c.parent.visible, seen[k] > 1 && !c.isMesh ? idx[k] : 0, g));
+    if (isAsm(c) && EXP.has(c)) childrenRows(c, depth + 1, dim || !c.visible, out);
+  });
+}
+let treeQuery = "";
+function renderTree(reveal) {
+  if (!world) return;
+  const el = $("tree");
+  if (treeQuery) return renderSearch();
+  const root = ROOT, out = [];
+  if (reveal && selected) for (let p = selected.parent; p && p !== world; p = p.parent) EXP.add(p);
+  out.push(rowHtml(root, 0, false, 0));
+  if (EXP.has(root)) childrenRows(root, 1, !root.visible, out);
+  const top = el.scrollTop;
+  el.innerHTML = out.join("");
+  el.scrollTop = top;
+  if (reveal && selected) { const r = el.querySelector(".sel"); if (r && r.scrollIntoView) r.scrollIntoView({ block: "nearest" }); }
+}
+function renderSearch() {
+  const q = treeQuery.toLowerCase(), out = [], asm = [], seenAsm = new Set();
+  NODES.forEach((o) => {
+    if (!isAsm(o) || o === ROOT || o === NODES[0]) return;
+    const key = rawName(o) + "|" + o.userData.n;
+    if ((rawName(o) + " " + drawingOf(o)).toLowerCase().indexOf(q) >= 0 && !seenAsm.has(key)) { seenAsm.add(key); asm.push(o); }
+  });
+  const parts = CAT.parts.filter((p) => (p.name + " " + p.drawing + " " + p.id).toLowerCase().indexOf(q) >= 0);
+  const total = asm.length + parts.length, CAP = 80;
+  asm.slice(0, CAP).forEach((o) => out.push(rowHtml(o, 0, !shown(o), 0).replace(/<button class="eye[^]*?<\/button>/, "")));
+  parts.slice(0, Math.max(0, CAP - asm.length)).forEach((p) => {
+    const m = (BYPART[p.id] || [])[0]; if (!m) return;
+    out.push(rowHtml(m, 0, false, 0).replace(/<button class="eye[^]*?<\/button>/, "").replace("</span></div>", " · " + fmt(L.pcs, { n: p.instances }) + "</span></div>"));
+  });
+  $("tree").innerHTML = out.length ? out.join("") + (total > CAP ? '<div class="more">' + fmt(L.more, { n: total - CAP }) + "</div>" : "") : '<div class="more">' + L.nothing + "</div>";
+}
+$("q").addEventListener("input", (e) => { treeQuery = e.target.value.trim(); renderTree(); });
+$("tree").addEventListener("click", (e) => {
+  const row = e.target.closest(".tr"); if (!row) return;
+  const o = NODES[+row.dataset.n];
+  const grp = row.dataset.grp ? row.dataset.grp.split(",").map((n) => NODES[+n]) : null;
+  if (e.target.closest("[data-eye]")) { const on = grp ? grp.every((m) => !m.visible) : !o.visible; setVisible(grp || [o], on); return; }
+  if (e.target.closest("[data-car]") && isAsm(o)) { if (EXP.has(o)) EXP.delete(o); else EXP.add(o); renderTree(); return; }
+  select(o, { frame: true, ghost: true });
+  if (narrow() && !$("panel").classList.contains("collapsed")) { $("panel").classList.add("collapsed"); store("panelM", "1"); }
+});
+
+// ---------------- fold state ----------------
+const narrow = () => window.innerWidth <= 700;
+function store(key, val) {
+  try { if (val === undefined) return window.localStorage.getItem("assembly." + key); window.localStorage.setItem("assembly." + key, val); }
+  catch (e) { return null; }
+}
+function foldable(cardId, headId, key) {
+  const card = $(cardId), saved = store(key);
+  card.classList.toggle("collapsed", saved === null ? narrow() : saved === "1");
+  $(headId).addEventListener("click", (e) => {
+    if (e.target.id === "infoX") return;
+    const c = !card.classList.contains("collapsed");
+    card.classList.toggle("collapsed", c); store(key, c ? "1" : "0");
+  });
+}
+foldable("panel", "pHead", narrow() ? "panelM" : "panelD");
+foldable("info", "infoHead", narrow() ? "infoM" : "infoD");
+// panel sections: View / Boards on the desk / Download files / Parts (L.sec) fold on the heading (remembered)
+document.querySelectorAll("#panel .sec").forEach((sec) => {
+  const k = "sec." + (location.pathname.split("/")[1] || "local") + "." + sec.dataset.k, v = store(k);   // per project
+  sec.classList.toggle("collapsed", v === null || v === undefined ? sec.dataset.collapsed === "1" : v === "1");
+  sec.querySelector(".sh").addEventListener("click", () => { const c = !sec.classList.contains("collapsed"); sec.classList.toggle("collapsed", c); store(k, c ? "1" : "0"); });
+});
+// "Download files" never shrinks, an open sim list keeps its first rows; when the sections above then leave the tree less than
+// its min height, the panel scrolls as a whole
+function fitPanel() {
+  const body = document.querySelector("#panel .body"), tree = $("tree");
+  if (!body || !tree) return;
+  const vm = $("vmSec");   // an open sim list keeps its heading + first board row; the rest scrolls inside it
+  if (vm) {
+    const row = vm.querySelector("#vmBoards > *"), sb = vm.querySelector(".secbody"), cs = getComputedStyle(vm);
+    const end = row ? row.getBoundingClientRect().bottom + (sb ? sb.scrollTop : 0) : vm.querySelector(".sh").getBoundingClientRect().bottom;
+    const want = vm.classList.contains("collapsed") ? "" : Math.ceil(end - vm.getBoundingClientRect().top + parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth || 0)) + "px";
+    if (vm.style.minHeight !== want) vm.style.minHeight = want;
+  }
+  body.classList.toggle("tight", body.scrollHeight > body.clientHeight + 1);   // sections + the tree's min height do not fit: scroll (not scroll-dependent)
+}
+addEventListener("resize", fitPanel);
+{ let queued = false;   // sections folding / shown (kit.mjs, hw.mjs), the sim list arriving later (sim_ui.mjs) or growing: re-fit once per frame
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; fitPanel(); }); } };
+  const body = document.querySelector("#panel .body"), ro = new ResizeObserver(later), seen = new WeakSet();
+  const watch = () => { body.querySelectorAll(":scope > .sec").forEach((e) => { if (!seen.has(e)) { seen.add(e); ro.observe(e); } }); later(); };
+  ro.observe(body); watch();
+  new MutationObserver(watch).observe(body, { childList: true });   // a section added later (#vmSec); not subtree: the sim repaints rows 10x/s
+  new MutationObserver(later).observe(body, { subtree: true, attributes: true, attributeFilter: ["class", "hidden"] }); }
+$("pFold").title = $("infoFold").title = L.fold; $("infoX").title = L.close;
+{   // the language switcher in the panel head: a pick is remembered in this browser, the page reloads in it
+  const sel = $("pLang");
+  sel.innerHTML = LANGS.map((l) => `<option value="${l}"${l === LANG ? " selected" : ""}>${l.toUpperCase()}</option>`).join("");
+  sel.title = sel.ariaLabel = L.lang;
+  sel.addEventListener("click", (e) => e.stopPropagation());   // the head folds the panel on click
+  sel.addEventListener("change", () => switchLang(sel.value));
+}
+for (const [id, k] of [["secView", "view"], ["secHw", "hw"], ["secDl", "dl"], ["secParts", "parts"]]) $(id).querySelector(".sh").textContent = L.sec[k];
+$("bReset").textContent = L.reset; $("q").placeholder = L.search;
+$("hintD").textContent = L.hintDesk; $("hintM").textContent = L.hintTouch;
+$("dlStep").textContent = L.step; $("dlStl").textContent = L.stl; $("infoCenter").textContent = L.center; $("infoOnly").textContent = L.only;
+function renderLegend() {
+  const cadm = COLMODE === "cad" && HAS_COL, mat = COLMODE === "material" && HAS_MAT, used = new Set(CAT ? CAT.parts.map((p) => p.material) : []);
+  $("legend").innerHTML = cadm ? "<span>" + L.cadNote + "</span>" : (mat ? MAT_ORDER.filter((k) => used.has(k)).map((k) => '<span><i style="background:' + hex(MAT_STYLE[k][0]) + '"></i>' + L.materials[k] + "</span>")
+    : ["made", "standard", "purchased"].map((k) => '<span><i style="background:' + hex(KIND_COLOR[k]) + '"></i>' + L.legendKinds[k] + "</span>")).join("");
+  $("bColCad").className = cadm ? "on" : ""; $("bColMat").className = mat ? "on" : ""; $("bColKind").className = !cadm && !mat ? "on" : "";
+  $("bColCad").hidden = !HAS_COL; $("bColMat").hidden = !HAS_MAT;
+  $("colRow").hidden = !HAS_MAT && !HAS_COL;
+}
+function restyle() { NODES.forEach((o) => { if (o.isMesh) o.userData.base = baseMat(PARTS[o.userData.part]); }); light(selected); invalidate(); }
+function setColorMode(m) {
+  COLMODE = m; store("colmode", m);
+  restyle(); renderLegend(); renderTree();
+}
+// ---- "View": contours / gap shadows / high contrast are plain toggles with fixed, tuned strengths (remembered in localStorage) ----
+const PRESET = { n: { edges: 0.92, thick: 1.5, ao: 0.75, col: 0x0b0d10, bg: 0xeef2f5 }, h: { edges: 1, thick: 2, ao: 0.95, col: 0x000000, bg: 0xffffff } };
+const AUTO = { ao: null, enabled: true };      // AO switched off by itself (slow frames): reason string
+function applyView() {
+  const pr = VIEW.hc ? PRESET.h : PRESET.n, aoOn = VIEW.ao && !AUTO.ao;
+  fx.set({ edges: VIEW.edges ? pr.edges : 0, thick: pr.thick, ao: aoOn ? pr.ao : 0, edgeColor: pr.col });
+  scene.background.set(pr.bg);
+  document.documentElement.classList.toggle("hc", VIEW.hc);
+  LINES.forEach((l) => (l.visible = VIEW.edges && l.parent.material !== GHOST));
+  $("bEdges").className = VIEW.edges ? "on" : ""; $("bAO").className = VIEW.ao && !AUTO.ao ? "on" : ""; $("bHC").className = VIEW.hc ? "on" : "";
+  $("fxNote").hidden = !AUTO.ao; $("fxNote").textContent = AUTO.ao ? L.aoOff : "";
+  invalidate();
+}
+function setView(o) {
+  const hcChanged = "hc" in o && !!o.hc !== VIEW.hc;
+  Object.assign(VIEW, o);
+  if ("ao" in o) { AUTO.ao = null; if (o.ao) AUTO.enabled = false; }   // the user asked for it: stop second-guessing this session
+  store("view", JSON.stringify(VIEW));
+  if (hcChanged && world) restyle();
+  applyView();
+}
+$("viewLbl").textContent = L.view; $("bEdges").textContent = L.edges; $("bAO").textContent = L.ao; $("bHC").textContent = L.hc;
+$("bEdges").addEventListener("click", () => setView({ edges: !VIEW.edges }));
+$("bAO").addEventListener("click", () => setView({ ao: !(VIEW.ao && !AUTO.ao) }));
+$("bHC").addEventListener("click", () => setView({ hc: !VIEW.hc }));
+applyView();
+api.view = { get: () => Object.assign({}, VIEW, { autoAo: AUTO.ao }), set: setView, fx, spangle: (on) => { SPANGLE_ON = !!on; restyle(); }, auto: (on) => { AUTO.enabled = !!on; } };
+$("colLbl").textContent = L.colorBy; $("bColCad").textContent = L.byCad; $("bColMat").textContent = L.byMaterial; $("bColKind").textContent = L.byKind;
+$("bColCad").addEventListener("click", () => setColorMode("cad")); $("bColMat").addEventListener("click", () => setColorMode("material")); $("bColKind").addEventListener("click", () => setColorMode("kind"));
+
+// ---------------- standard views, measuring grid, ruler ----------------
+// What a client's engineer missed after working in a CAD portal's viewer. All three sit in the "View" section of the panel rather
+// than on a toolbar over the model: one home for every control, and the panel is the part that already works on a phone.
+const TMP = new V3();
+const VIEWS = { front: [0, 0], back: [Math.PI, 0], right: [Math.PI / 2, 0], left: [-Math.PI / 2, 0],
+                top: [0, TOP_PITCH], bottom: [0, -TOP_PITCH], iso: [-Math.PI / 4, Math.atan(Math.SQRT1_2)] };   // camera: front = +Z, right = +X, top = +Y
+const VIEW_BTN = { front: "bViewFront", back: "bViewBack", left: "bViewLeft", right: "bViewRight", top: "bViewTop", bottom: "bViewBottom", iso: "bViewIso" };
+const turn = (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));      // how far two yaws are apart, 0…π
+function goToView(name) { if (VIEWS[name] && world) flyTo(fitView(VIEWS[name][0], VIEWS[name][1])); }   // the same tight fit as "Reset view", at this angle
+function viewAt() {
+  if (Math.abs(Math.abs(cam.pitch) - TOP_PITCH) < 0.01) return cam.pitch > 0 ? "top" : "bottom";   // straight down is the top view at any yaw
+  for (const k in VIEWS) if (turn(cam.yaw - VIEWS[k][0]) < 0.01 && Math.abs(cam.pitch - VIEWS[k][1]) < 0.01) return k;
+  return null;
+}
+let viewMark = null;
+function syncViews() {
+  const at = viewAt();
+  if (at === viewMark) return;
+  viewMark = at;
+  for (const k in VIEW_BTN) $(VIEW_BTN[k]).classList.toggle("on", k === at);
+}
+for (const k in VIEW_BTN) { const b = $(VIEW_BTN[k]); b.textContent = L.views[k]; b.addEventListener("click", () => goToView(k)); }
+
+// Grid: three panes around the machine (floor + the two far walls, like a corner of a room) with lines every `step` mm, every fifth
+// one stronger. Drawn in the fragment shader, not as line geometry: lines of their own would be taken for feature edges by the CAD
+// look (`view_fx`: an alpha below 1 marks a line pixel) and would come out thick and black.
+const GRID_STEPS = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
+const GRID = { on: false, step: "auto" };
+const GRID_VERT = "varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }";
+const GRID_FRAG = `
+  varying vec2 vP;
+  uniform float uStep;
+  uniform vec3 uBg, uLine, uMajor;
+  float lines(vec2 p, float s) {
+    vec2 w = fwidth(p);
+    vec2 d = abs(fract(p / s - 0.5) - 0.5) * s / max(w, vec2(1e-6));      // distance to the nearest line, in pixels
+    float cell = s / max(max(w.x, w.y), 1e-6);                            // one cell, in pixels
+    return (1.0 - smoothstep(0.0, 1.0, min(d.x, d.y))) * smoothstep(3.0, 8.0, cell);   // a grid finer than a few pixels fades away instead of turning grey
+  }
+  void main() {
+    vec3 c = mix(uBg, uLine, lines(vP, uStep) * 0.8);
+    c = mix(c, uMajor, lines(vP, uStep * 5.0) * 0.9);
+    gl_FragColor = vec4(c, 1.0);
+    #include <colorspace_fragment>
+  }`;
+let grid = null;
+const gridStepFor = (span) => GRID_STEPS.reduce((best, s) => (Math.abs(Math.log(s / (span / 20))) < Math.abs(Math.log(best / (span / 20))) ? s : best));   // ~20 cells along the machine
+function gridPane(u0, u1, v0, v1) {    // a quad whose LOCAL (0,0) is the machine's box corner, so the lines of the three panes meet there
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([u0, v0, 0, u1, v0, 0, u1, v1, 0, u0, v0, 0, u1, v1, 0, u0, v1, 0], 3));
+  return g;
+}
+function disposeGrid() {
+  if (!grid) return;
+  scene.remove(grid.g);
+  grid.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  grid.mat.dispose();
+  grid = null;
+}
+function buildGrid() {
+  disposeGrid();
+  if (!world) return;
+  const b = sceneBox.clone(), s = b.getSize(new V3()), pad = Math.max(s.x, s.y, s.z) * 0.12;   // a tower needs headroom as much as a wide machine needs margin
+  const step = GRID.step === "auto" ? gridStepFor(Math.max(s.x, s.y, s.z)) : +GRID.step;
+  const u = { uStep: { value: step }, uBg: { value: new THREE.Color().copy(scene.background) },
+              uLine: { value: new THREE.Color(0x9aa7b3) }, uMajor: { value: new THREE.Color(0x66737f) } };
+  const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: GRID_VERT, fragmentShader: GRID_FRAG, side: THREE.DoubleSide });
+  const floor = new THREE.Mesh(gridPane(-pad, s.x + pad, -pad, s.z + pad), mat);   // local x -> world X, local y -> world -Z
+  floor.rotation.x = -Math.PI / 2;
+  const wz = new THREE.Mesh(gridPane(-pad, s.x + pad, 0, s.y + pad), mat);         // the wall behind: local x -> world X, local y -> world Y
+  const wx = new THREE.Mesh(gridPane(-pad, s.z + pad, 0, s.y + pad), mat);         // the wall at the side: local x -> world -Z
+  wx.rotation.y = Math.PI / 2;
+  const g = new THREE.Group();
+  g.add(floor, wz, wx);
+  scene.add(g);
+  grid = { g, mat, u, floor, wz, wx, step, box: b, size: s };
+  faceGrid();
+}
+function faceGrid() {    // the two walls stand on the far side of the machine, so they never come between it and the client
+  if (!grid) return;
+  const b = grid.box, y0 = b.min.y - grid.size.y * 0.002;                     // the floor a hair below the feet: no z-fighting with the bottom faces
+  const d = camera.position.clone().sub(b.getCenter(TMP));                    // frame() calls applyCamera() first, so this is the camera of the frame being drawn
+  grid.wz.position.set(b.min.x, b.min.y, d.z >= 0 ? b.min.z : b.max.z);
+  grid.wx.position.set(d.x >= 0 ? b.min.x : b.max.x, b.min.y, b.max.z);
+  grid.wz.visible = grid.wx.visible = Math.abs(d.y) < Math.hypot(d.x, d.z) * 2.75;   // from above ~70° the walls only funnel the view
+  grid.floor.position.set(b.min.x, y0, b.max.z);
+  grid.floor.visible = camera.position.y > y0;                                // from below the floor would be a lid over the machine
+  grid.u.uBg.value.copy(scene.background);                                    // "High contrast" repaints the background
+}
+function applyGrid() {
+  $("bGrid").className = GRID.on ? "on" : "";
+  $("gridRow").hidden = !GRID.on;
+  $("gridStep").value = GRID.step;
+  if (GRID.on && world) { buildGrid(); $("gridSize").textContent = fmt(L.grid.size, { s: sizeText(sceneBox) }); } else disposeGrid();   // switched on before the model is up: nothing to measure yet
+  api.grid = { on: GRID.on, step: grid ? grid.step : null, size: world ? sceneBox.getSize(new V3()).toArray() : null };
+  invalidate();
+}
+function setGrid(on, step) {
+  GRID.on = !!on;
+  if (step !== undefined) GRID.step = step === "auto" || GRID_STEPS.includes(+step) ? String(step) : GRID.step;
+  store("grid", JSON.stringify(GRID));
+  applyGrid();
+}
+$("bGrid").textContent = L.grid.on; $("gridLbl").textContent = L.grid.step;
+$("gridStep").innerHTML = '<option value="auto">' + esc(L.grid.auto) + "</option>" +
+  GRID_STEPS.map((s) => '<option value="' + s + '">' + esc(fmt(L.grid.cell, { n: s })) + "</option>").join("");
+$("bGrid").addEventListener("click", () => setGrid(!GRID.on));
+$("gridStep").addEventListener("change", () => setGrid(true, $("gridStep").value));
+
+// Ruler: two clicks on the model, the distance between them in mm. The points snap to the nearest corner of the triangle under the
+// cursor, so an edge or a hole gives its real size. Line and label are drawn over the canvas (SVG), never hidden by the machine.
+const MEAS = { on: false, pts: [] };
+const toScreen = (p) => { const v = p.clone().project(camera); return { x: ((v.x + 1) / 2) * innerWidth, y: ((1 - v.y) / 2) * innerHeight, ok: v.z > -1 && v.z < 1 }; };
+function snapToVertex(h, cx, cy) {
+  const f = h.face, pos = h.object.geometry.attributes.position;
+  if (!f || !pos) return h.point.clone();
+  let best = null, bd = 12;    // px
+  [f.a, f.b, f.c].forEach((i) => {
+    const p = new V3().fromBufferAttribute(pos, i).applyMatrix4(h.object.matrixWorld), s = toScreen(p);
+    const d = Math.hypot(s.x - cx, s.y - cy);
+    if (d < bd) { bd = d; best = p; }
+  });
+  return best || h.point.clone();
+}
+function measureAt(cx, cy) {
+  const h = world && MEAS.on ? pickAt(cx, cy) : null;
+  if (!h) return null;
+  if (MEAS.pts.length >= 2) MEAS.pts = [];     // a third click starts a new measurement
+  MEAS.pts.push(snapToVertex(h, cx, cy));
+  updateMeas();
+  return MEAS.pts[MEAS.pts.length - 1].toArray();
+}
+function updateMeas() {
+  const two = MEAS.pts.length === 2, d = two ? MEAS.pts[1].clone().sub(MEAS.pts[0]) : null;
+  const out = $("measOut");
+  if (!MEAS.on) out.textContent = "";
+  else if (two) out.innerHTML = "<b>" + esc(fmt(L.meas.out, { d: num(d.length(), 1) })) + "</b> · " +
+    esc(fmt(L.meas.split, { h: num(Math.hypot(d.x, d.z), 1), v: num(Math.abs(d.y), 1) }));
+  else out.textContent = MEAS.pts.length ? L.meas.second : L.meas.hint;
+  $("measRow").hidden = !MEAS.on;
+  $("measClear").hidden = !MEAS.on || !MEAS.pts.length;
+  api.measure = { on: MEAS.on, points: MEAS.pts.map((p) => p.toArray()), distance: two ? d.length() : null };
+  drawMeas();
+  invalidate();
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+let measGfx = null;        // line + two markers, built once: drawMeas runs on every frame the camera moves
+function measSvg() {
+  if (measGfx) return measGfx;
+  const svg = $("measSvg"), mk = (tag, at) => { const e = document.createElementNS(SVGNS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); return e; };
+  measGfx = { line: mk("line", { stroke: "#d9480f", "stroke-width": 2, "stroke-dasharray": "7 5" }),
+              dots: [0, 1].map(() => mk("circle", { r: 4.5, fill: "#d9480f", stroke: "#fff", "stroke-width": 1.5 })) };
+  return measGfx;
+}
+function drawMeas() {
+  const svg = $("measSvg"), lbl = $("measLbl");
+  if (!MEAS.on || !MEAS.pts.length) { svg.hidden = true; lbl.hidden = true; return; }
+  const s = MEAS.pts.map(toScreen), g = measSvg();
+  g.dots.forEach((c, i) => {
+    c.setAttribute("visibility", s[i] && s[i].ok ? "visible" : "hidden");      // a point behind the camera projects to nonsense
+    if (s[i]) { c.setAttribute("cx", s[i].x.toFixed(1)); c.setAttribute("cy", s[i].y.toFixed(1)); }
+  });
+  const both = s.length === 2 && s[0].ok && s[1].ok;
+  g.line.setAttribute("visibility", both ? "visible" : "hidden");
+  if (both) {
+    g.line.setAttribute("x1", s[0].x.toFixed(1)); g.line.setAttribute("y1", s[0].y.toFixed(1));
+    g.line.setAttribute("x2", s[1].x.toFixed(1)); g.line.setAttribute("y2", s[1].y.toFixed(1));
+    lbl.textContent = fmt(L.meas.out, { d: num(MEAS.pts[0].distanceTo(MEAS.pts[1]), 1) });
+    lbl.style.left = ((s[0].x + s[1].x) / 2).toFixed(1) + "px"; lbl.style.top = ((s[0].y + s[1].y) / 2).toFixed(1) + "px";
+  }
+  svg.hidden = false;
+  lbl.hidden = !both;
+}
+function setMeasure(on) {
+  MEAS.on = !!on;
+  if (!MEAS.on) MEAS.pts = [];
+  $("bMeasure").className = MEAS.on ? "on" : "";
+  document.body.classList.toggle("measuring", MEAS.on);
+  updateMeas();
+}
+$("bMeasure").textContent = L.meas.on; $("measClear").textContent = L.meas.clear;
+$("bMeasure").addEventListener("click", () => setMeasure(!MEAS.on));
+$("measClear").addEventListener("click", () => { MEAS.pts = []; updateMeas(); });
+addEventListener("keydown", (e) => {   // not while a comment is being typed: feedback.mjs clears its own text on Escape
+  const el = document.activeElement || {};
+  if (e.key === "Escape" && MEAS.on && el.tagName !== "TEXTAREA" && el.tagName !== "INPUT") setMeasure(false);
+});
+api.setView = goToView; api.setGrid = setGrid; api.setMeasure = setMeasure;
+api.measureAt = measureAt; api.clearMeasure = () => { MEAS.pts = []; updateMeas(); };
+function initTools() {      // after the model: the grid needs its box, the views their fit
+  try { const s = JSON.parse(store("grid") || "{}"); if (typeof s.on === "boolean") GRID.on = s.on; if (s.step === "auto" || GRID_STEPS.includes(+s.step)) GRID.step = String(s.step); }
+  catch (e) { /* no stored state */ }
+  applyGrid(); updateMeas(); syncViews();
+}
+
+// ---------------- pointer input (same scheme as the one-file viewer) ----------------
+const ptrs = {}; let gesture = null, lastTap = null;
+const TAP_PX = 6, DOUBLE_MS = 400, DOUBLE_PX = 30;
+const nPtrs = () => Object.keys(ptrs).length;
+const pair = () => { const ids = Object.keys(ptrs); return [ptrs[ids[0]], ptrs[ids[1]]]; };
+function startGesture(e, mode) { gesture = { mode, x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch, target: cam.target.clone(), moved: 0, button: e.button || 0 }; }
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+canvas.addEventListener("pointerdown", (e) => {
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ }
+  ptrs[e.pointerId] = { x: e.clientX, y: e.clientY }; fly = null;
+  if (nPtrs() === 1) startGesture(e, e.button === 2 || e.button === 1 || e.shiftKey ? "pan" : "orbit");
+  else if (nPtrs() === 2) {
+    const p = pair();
+    gesture = { mode: "pinch", d0: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1, mx: (p[0].x + p[1].x) / 2, my: (p[0].y + p[1].y) / 2, dist: cam.dist, target: cam.target.clone(), moved: Infinity };
+  }
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!ptrs[e.pointerId]) return;
+  ptrs[e.pointerId].x = e.clientX; ptrs[e.pointerId].y = e.clientY;
+  const g = gesture; if (!g) return;
+  if (g.mode === "pinch") {
+    if (nPtrs() < 2) return;
+    const p = pair(), d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1;
+    cam.dist = (g.dist * g.d0) / d; clampCam();
+    panBy(g.target, (p[0].x + p[1].x) / 2 - g.mx, (p[0].y + p[1].y) / 2 - g.my); invalidate(); return;
+  }
+  const dx = e.clientX - g.x, dy = e.clientY - g.y;
+  g.moved = Math.max(g.moved, Math.abs(dx) + Math.abs(dy));
+  if (g.moved <= TAP_PX) return;
+  stage.style.cursor = "grabbing";
+  if (g.mode === "pan") panBy(g.target, dx, dy);
+  else { cam.yaw = g.yaw - dx * 0.006; cam.pitch = g.pitch + dy * 0.005; clampCam(); }
+  invalidate();
+});
+function endPointer(e) {
+  if (!ptrs[e.pointerId]) return;
+  const wasTap = gesture && gesture.mode !== "pinch" && gesture.button === 0 && gesture.moved <= TAP_PX && nPtrs() === 1 && e.type === "pointerup";
+  delete ptrs[e.pointerId]; stage.style.cursor = "grab";
+  if (nPtrs() === 1) { const id = Object.keys(ptrs)[0]; startGesture({ clientX: ptrs[id].x, clientY: ptrs[id].y }, "orbit"); gesture.moved = Infinity; }
+  else if (nPtrs() === 0) gesture = null;
+  if (wasTap) tap(e);
+}
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+function tap(e) {
+  if (MEAS.on) { measureAt(e.clientX, e.clientY); return; }   // while the ruler is on a click measures; it never selects or re-centres
+  const now = e.timeStamp || performance.now(), h = pickAt(e.clientX, e.clientY);
+  if (lastTap && now - lastTap.t < DOUBLE_MS && Math.abs(e.clientX - lastTap.x) + Math.abs(e.clientY - lastTap.y) < DOUBLE_PX) {
+    lastTap = null; if (h) pivotTo(h.point); invalidate(); return;     // double tap never hides
+  }
+  lastTap = { t: now, x: e.clientX, y: e.clientY };
+  select(h ? h.object : null);
+}
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault(); fly = null;
+  cam.dist *= 1 + Math.max(-0.5, Math.min(0.5, e.deltaY * 0.001)); clampCam(); invalidate();
+}, { passive: false });
+
+// ---------------- URL hash: #cam=yaw,pitch,dist,tx,ty,tz&hide=<part ids>&hn=<node idx>&sel=<part id>&seln=<node idx> ----------------
+function readHash() {
+  const q = {};
+  (location.hash || "").slice(1).split("&").forEach((kv) => { const i = kv.indexOf("="); if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  return q;
+}
+function applyHash() {
+  if (!world) return;
+  const q = readHash();
+  if (q.cam) {
+    const c = q.cam.split(",").map(parseFloat);
+    if (c.length === 6 && c.every(isFinite)) { fly = null; cam.yaw = c[0]; cam.pitch = c[1]; cam.dist = c[2]; cam.target.set(c[3], c[4], c[5]); }
+  }
+  NODES.forEach((o) => (o.visible = true));
+  if (q.hide) q.hide.split(",").forEach((id) => (BYPART[id] || []).forEach((m) => (m.visible = false)));
+  if (q.hn) q.hn.split(",").forEach((n) => { if (NODES[+n]) NODES[+n].visible = false; });
+  updateShowAll();
+  let s = null;
+  if (q.seln && NODES[+q.seln]) s = NODES[+q.seln];
+  else if (q.sel && BYPART[q.sel]) s = BYPART[q.sel].find((m) => shown(m)) || BYPART[q.sel][0];
+  select(s);
+}
+function writeHash() {
+  if (!world) return;
+  const parts = [], hideParts = new Set(), hn = [];
+  NODES.forEach((o) => {
+    if (o.visible) return;
+    if (o.isMesh && BYPART[o.userData.part].every((m) => !m.visible)) hideParts.add(o.userData.part); else hn.push(o.userData.n);
+  });
+  parts.push("cam=" + [cam.yaw, cam.pitch, cam.dist, cam.target.x, cam.target.y, cam.target.z].map((v) => Math.round(v * 1000) / 1000).join(","));
+  if (hideParts.size) parts.push("hide=" + encodeURIComponent([...hideParts].join(",")));
+  if (hn.length) parts.push("hn=" + hn.join(","));
+  (api.hashExtra || []).forEach((f) => { const x = f(); if (x) parts.push(x); });   // cycle bar: t=<s> while paused
+  if (selected) parts.push(selected.isMesh ? "sel=" + encodeURIComponent(selected.userData.part) + "&seln=" + selected.userData.n : "seln=" + selected.userData.n);
+  api.hash = "#" + parts.join("&");
+  try { history.replaceState(null, "", api.hash); } catch (e) { /* file:// or sandbox */ }
+}
+window.addEventListener("hashchange", () => { applyHash(); invalidate(); });
+
+// ---------------- frame loop (renders only when something changed) ----------------
+function resize() {
+  const w = window.innerWidth || 1, h = window.innerHeight || 1;
+  renderer.setSize(w, h); fx.resize(); camera.aspect = w / h; camera.updateProjectionMatrix(); invalidate();
+}
+window.addEventListener("resize", resize); resize();
+let slow = 0, fast = 0, lastHash = 0, lastRender = 0, ema = 0, nEma = 0;
+function frame() {
+  const t = performance.now();
+  for (let i = 0; i < api.tickers.length; i++) { try { api.tickers[i](t); } catch (e) { console.error(e); api.tickers.splice(i--, 1); } }   // virtual machine: advance the sim (time-budgeted)
+  const moving = stepFly();
+  if (moving || dirty) {
+    applyCamera();
+    faceGrid(); syncViews();
+    const t0 = performance.now();
+    fx.render();
+    if (MEAS.pts.length) drawMeas();      // the line and its label follow the camera
+    const ms = performance.now() - t0;                          // CPU submit time; adaptive DPR on a slow device
+    if (ms > 45) { slow++; fast = 0; } else { fast++; }
+    if (slow > 8 && dpr > 1) { dpr = 1; renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight); fx.resize(); slow = 0; }
+    // frame-to-frame time while interacting (GPU-bound cost shows up here, not in the CPU submit time): >33 ms for a while -> gap shadows off
+    if (lastRender && t - lastRender < 120) {
+      const dt = t - lastRender; ema = ema ? ema * 0.9 + dt * 0.1 : dt; nEma++;
+      if (AUTO.enabled && VIEW.ao && !AUTO.ao && nEma > 20 && ema > 33) { AUTO.ao = "slow"; applyView(); }
+    } else { ema = 0; nEma = 0; }
+    lastRender = t;
+    api.frames++; dirty = moving;
+  }
+  const now = performance.now();
+  if (needHash && !moving && now - lastHash > 400) { writeHash(); needHash = false; lastHash = now; }
+  requestAnimationFrame(frame);
+}
+
+// ---------------- hooks for scripts / review ----------------
+api.state = () => ({ yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, target: cam.target.toArray(), flying: !!fly,
+  selected: selected ? { n: selected.userData.n, part: selected.userData.part || null, name: labelOf(selected) } : null,
+  hidden: NODES.filter((o) => !o.visible).map((o) => o.userData.n), infoOpen: !$("info").hidden,
+  infoCollapsed: $("info").classList.contains("collapsed"), panelCollapsed: $("panel").classList.contains("collapsed"), dpr });
+api.select = (id, frame) => {                      // part id (first instance), node index, or null
+  let o = null;
+  if (typeof id === "number") o = NODES[id];
+  else if (id && BYPART[id]) o = BYPART[id].find((m) => shown(m)) || BYPART[id][0];
+  select(o, { frame: !!frame });
+};
+api.pick = (x, y) => {                             // normal: the hit face's, world space, turned towards the camera (the meshes are double-sided)
+  const h = pickAt(x, y); if (!h) return null;
+  const nrm = h.face ? h.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(h.object.matrixWorld)).normalize() : null;
+  if (nrm && nrm.dot(ray.ray.direction) > 0) nrm.negate();
+  return { part: h.object.userData.part, n: h.object.userData.n, point: h.point.toArray(), normal: nrm ? nrm.toArray() : null, face: h.faceIndex };
+};
+api.meshTris = (n) => {                           // a mesh's triangles in assembly mm, faceIndex order (the "this face" mark)
+  const o = NODES[n]; if (!o || !o.isMesh) return null;
+  const g = o.geometry, P = g.attributes.position, I = g.index, R = asmRot(), v = new V3(), out = [];
+  const at = (i) => v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld).applyMatrix4(R).toArray();
+  for (let f = 0, nf = (I ? I.count : P.count) / 3; f < nf; f++) out.push([0, 1, 2].map((k) => at(I ? I.getX(3 * f + k) : 3 * f + k)));
+  return out;
+};
+// the model's own assembly frame (mm, the CAD's axes, as parts.json bbox_mm): the page's world is that turned so its up is Y (`world` = R·S(1000))
+const asmRot = () => new THREE.Matrix4().makeRotationFromQuaternion(world.quaternion).invert();
+api.toAsm = (v, dir) => new V3().fromArray(v).applyMatrix4(asmRot()).toArray();   // a point or a direction: R⁻¹ either way (no translation)
+api.fromAsm = (v) => new V3().fromArray(v).applyQuaternion(world.quaternion).toArray();   // assembly mm -> this page's world (a point or a direction)
+api.rayAt = (x, y) => {                            // the view ray through a client pixel, assembly frame (a drawing on a face's plane, #106)
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
+  return { origin: api.toAsm(ray.ray.origin.toArray()), dir: api.toAsm(ray.ray.direction.toArray(), true) };
+};
+api.pickOn = (x, y, id) => {                       // the hit on one part only (other parts in front do not count): plane drawing
+  const r = canvas.getBoundingClientRect(), ms = (BYPART[id] || []).filter(shown); if (!ms.length) return null;
+  ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
+  const h = ray.intersectObjects(ms, false)[0];
+  return h ? { part: id, n: h.object.userData.n, point: h.point.toArray() } : null;
+};
+api.THREE = THREE; api.scene = scene;              // drawn notes live in the scene (feedback.mjs), outside `world`: never picked
+api.camInfo = () => {                              // this view's camera in the assembly frame: enough to render the very same picture elsewhere
+  const m = asmRot().multiply(camera.matrixWorld), r = (a, d) => a.map((x) => Math.round(x * 10 ** d) / 10 ** d);
+  const rows = (M) => r(M.clone().transpose().elements, 6);   // three keeps column-major: hand out row-major (numpy reshape(4, 4))
+  return { w: canvas.clientWidth, h: canvas.clientHeight, fov: camera.fov, near: camera.near, far: camera.far,
+           position: r(new V3().setFromMatrixPosition(m).toArray(), 2), target: r(api.toAsm(cam.target.toArray()), 2),
+           up: r(new V3().setFromMatrixColumn(m, 1).toArray(), 4), view: rows(m.clone().invert()), proj: rows(camera.projectionMatrix) };
+};
+api.selInfo = () => {                              // the card's selection, for a part comment: part id, its node (code-CAD group or drawing module), card title
+  const o = selected; if (!o) return null;
+  const p = o.isMesh ? PARTS[o.userData.part] : null;
+  return { part: o.isMesh ? o.userData.part : null, kit: (p && p.part_id) || null, n: o.userData.n, name: $("infoT").textContent,
+           node: o.isMesh ? (p && p.module) || (drawingOf(o) || "").slice(0, 5) || null : labelOf(o),
+           key: o.isMesh ? null : rawName(o) };       // a node's name as in the model STEP: the download kits match it
+};
+api.nodeByDrawing = (d) => NODES.filter((o) => isAsm(o) && (drawingOf(o) === d || (!drawingOf(o) && rawName(o) === d))).map((o) => o.userData.n);   // a drawing number, or the name of a code-CAD group node
+api.partScreen = (id) => {                         // client px of a visible instance's centre (for real-input tests)
+  const m = (BYPART[id] || []).find((x) => shown(x)); if (!m) return null;
+  const c = boxOf(m).getCenter(new V3()).project(camera);
+  return { x: ((c.x + 1) / 2) * innerWidth, y: ((1 - c.y) / 2) * innerHeight, n: m.userData.n };
+};
+api.box = (n) => { const b = boxOf(NODES[n], true); return b.isEmpty() ? null : [b.min.toArray(), b.max.toArray()]; };
+api.parts = () => Object.keys(BYPART).map((id) => [id, BYPART[id].map((m) => m.userData.n)]);
+api.isolate = (n) => isolate(NODES[n]);
+api.showAll = showAll;
+api.setCam = (c) => { fly = null; Object.assign(cam, c); if (c.target) cam.target = new V3().fromArray(c.target); clampCam(); invalidate(); };
+api.bench = (n) => {                               // forced frames back to back, ms per frame (GPU-bound if the browser has a GPU)
+  n = n || 30; const gl = renderer.getContext(), px = new Uint8Array(4), sync = () => { gl.finish(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); };   // readPixels forces the GPU to really finish
+  applyCamera(); fx.render(); sync();
+  const t0 = performance.now();
+  for (let i = 0; i < n; i++) { cam.yaw += 0.01; applyCamera(); fx.render(); }
+  sync();
+  return { msPerFrame: (performance.now() - t0) / n, drawCalls: fx.stats.calls, triangles: fx.stats.triangles };
+};
+api.hash = "";
+api.canvas = canvas; api.writeHash = writeHash;   // feedback flushes the throttled hash before it reports location.href
+api.pickAt = pickAt;                                // the device layer (device_ui.mjs) presses the part under the mouse
+api.renderNow = () => { applyCamera(); fx.render(); };   // a frame on the canvas NOW: read it in the same tick (no preserveDrawingBuffer)
+api.setColorMode = setColorMode; api.colorMode = () => COLMODE;
+
+// Baked feature edges (edges.json/.bin from step-import/scripts/bake_edges.py): loaded after the model is on screen, lines added in small batches.
+async function startEdges() {
+  api.edges = { loaded: false, lines: 0 };
+  if (!api.config || !api.config.edges) return;
+  const t0 = performance.now();
+  try {
+    const r = await attachEdges(THREE, { url: dataUrl(api.config.edges), byPart: BYPART, invalidate,
+      lineMat: () => (fx.supported ? LM.marker : LM.direct), visible: () => VIEW.edges, onLine: (l) => LINES.push(l),
+      onProgress: (f) => { $("load").textContent = fmt(L.edgesLoading, { pct: Math.round(f * 100) }); } });
+    Object.assign(api.edges, r, { loaded: true, ms: performance.now() - t0 });
+  } catch (e) { console.warn("edges not loaded", e); api.edges.error = String(e); }
+  $("load").textContent = fmt(L.ready, { m: api.stats.meshes, p: api.stats.distinct, t: num(api.stats.triangles / 1e6, 2) });
+  invalidate();
+}
+
+// The machine layer: only when the site was built with --sim (config.json `sim` -> sim/config.json). Runs beside the model load; never blocks it.
+async function initSim() {
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (!api.config || !api.config.sim) return;   // absent = no machine (and no 404 in the console)
+  let cfg = null;
+  try { const r = await fetch(dataUrl(api.config.sim)); if (r.ok) cfg = await r.json(); } catch (e) { /* broken build */ }
+  if (!cfg) return;
+  try {
+    const mod = await import("/_viewer/sim_ui.js");
+    while (!api.ready && !api.error) await new Promise((r) => setTimeout(r, 50));   // panel + tree exist only after the model is up
+    if (api.error) return;
+    await mod.mount({ api, L, $, fmt, esc, BYPART, narrow, store, cfg });
+  } catch (err) { console.error(err); api.simError = String(err && err.stack || err); }
+}
+initSim();
+
+// Cycle animation (code-CAD machines): only when the site was built with a motion.json that has a `cycle` block (config.json `cycle`). No sim needed.
+async function initCycle() {
+  const hash0 = location.hash;   // the page rewrites the hash once the model is up; #t= must be read before that
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (!api.config || !api.config.cycle) return;
+  try {
+    const mod = await import("/_viewer/motion.js");
+    while (!api.ready && !api.error) await new Promise((r) => setTimeout(r, 50));
+    if (api.error) return;
+    await mod.mountCycle({ api, L, $, PARTS, BYPART, narrow, file: dataUrl(api.config.cycle), hash0 });
+  } catch (err) { console.error(err); api.cycleError = String(err && err.stack || err); }
+}
+initCycle();
+
+// Visual feedback (draw on the frame + comment -> POST): only when config.json has `feedback` (build.py --feedback URL).
+async function initFeedback() {
+  while (!api.ready && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (api.error || !api.config || !api.config.feedback) return;
+  try { const mod = await import("/_viewer/feedback.js"); mod.mountFeedback({ api, L, cfg: api.config }); }
+  catch (err) { console.error(err); api.feedbackError = String(err && err.stack || err); }
+}
+initFeedback();
+// Download kits (files for manufacturing, built from the current model on request): only when config.json has `kit` (build.py --kit).
+async function initKit() {   // as soon as config.json is read, not after the model: the buttons must not appear late
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (!api.config || !api.config.kit) return;
+  try { const mod = await import("/_viewer/kit.js"); await mod.mountKit({ api, L, cfg: api.config }); }
+  catch (err) { console.error(err); api.kitError = String(err && err.stack || err); }
+}
+initKit();
+// The model is rebuilt by the router after the bot changes it: public/model.json {v, building}. While it builds, a banner;
+// once a newer version is up, the page reloads onto it (the hash keeps camera and selection), never in the middle of a download wait
+// or while someone types a comment (it reloads once the text is sent or cleared).
+async function initModelLive() {
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 100));
+  if (!api.config || !api.config.kit) return;   // only pages of the stack (kit auto): the router writes model.json there
+  let v0 = null, was = false, bar = null;   // v0: the last built version at load (`built`; an older router: `v`)
+  for (;;) {
+    let m = null;
+    try { const r = await fetch("model.json", { cache: "no-store" }); if (r.ok) m = await r.json(); } catch (e) { /* none yet */ }
+    if (m) {
+      const v = m.built != null ? m.built : m.v;
+      if (v0 === null) v0 = v;
+      if (m.building && !bar && !document.getElementById("kitToast")) {   // a link download shows its own notice
+        bar = document.createElement("div"); bar.id = "modelBanner"; bar.textContent = L.banner;
+        bar.style.cssText = "position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:50;padding:6px 14px;border-radius:6px;" +
+          "background:var(--acc,#1c7ed6);color:#fff;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none";
+        document.body.appendChild(bar);
+      }
+      if (!m.building && bar) { bar.remove(); bar = null; }
+      was = was || m.building;
+      const waiting = api.kit && api.kit.state().waiting;
+      const typing = [...document.querySelectorAll("textarea")].some((t) => t.value.trim()) ||
+        (document.activeElement || {}).tagName === "TEXTAREA";   // never throw away a comment being written
+      if (!m.building && (v > v0 || (was && m.built == null)) && !waiting && !typing) { location.reload(); return; }   // a failed build: no reload
+    }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+}
+initModelLive();
+// Parts that share space: build.py checks a code model on every build and publishes the result as clearance.json; it
+// never blocks the page. A clash is a red mark at the top; its list jumps to the moment and the part.
+async function initClearance() {
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 100));
+  if (!api.config || !api.config.clearance) return;
+  let rep = null;
+  try { const r = await fetch(api.config.clearance + "?v=" + (api.config.v || ""), { cache: "no-store" }); if (r.ok) rep = await r.json(); } catch (e) { /* none */ }
+  api.clearance = rep;
+  const cl = (rep && rep.clashes) || [];
+  if (!cl.length) return;
+  while (!CAT && !api.error) await new Promise((r) => setTimeout(r, 100));   // names come from parts.json: never a row of bare ids
+  const box = document.createElement("div"); box.id = "clashMark";
+  const narrow = matchMedia("(max-width: 700px)").matches;   // phones: the panel fills the top half, so the mark goes to the bottom
+  // centred by margins, not left:50% + translate: that halves the width a fixed box may take, and a row then wraps into 4-5 lines
+  box.style.cssText = "position:fixed;" + (narrow ? "bottom:64px;width:92vw;" : "top:44px;width:fit-content;") + "left:0;right:0;margin:0 auto;z-index:40;max-width:min(92vw,460px);font-size:13px;color:#fff;" +
+    "background:#c92a2a;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3)";
+  const head = document.createElement("button"); head.id = "clashHead";
+  head.style.cssText = "all:unset;cursor:pointer;display:block;padding:6px 12px;font-weight:600";
+  head.textContent = fmt(L.clash.head, { n: cl.length });
+  head.title = L.clash.tip + (rep.assembled ? (rep.consent === "cad" ? L.clash.byCad : L.clash.built) + L.clash.withYou : L.clash.fixing);
+  const list = document.createElement("div"); list.id = "clashList"; list.hidden = true;
+  list.style.cssText = "max-height:40vh;overflow:auto;padding:0 6px 6px;scroll-snap-type:y proximity";
+  const nm = (id) => (PARTS[id] ? shortName(PARTS[id].name, PARTS[id].drawing) : id);   // the card's title, as the client knows the part
+  for (const c of cl) {
+    const b = document.createElement("button"); b.title = c.a + " × " + c.b;
+    b.style.cssText = "all:unset;cursor:pointer;display:block;padding:3px 6px;border-top:1px solid rgba(255,255,255,.25);scroll-snap-align:start;width:100%;box-sizing:border-box";
+    // the pair first, on its own line; the numbers under it: a row never shows numbers without the parts they belong to
+    const who = document.createElement("div"); who.className = "clashPair"; who.textContent = nm(c.a) + " × " + nm(c.b);
+    const how = document.createElement("div"); how.className = "clashNums"; how.style.cssText = "font-size:12px;opacity:.85";
+    how.textContent = c.volume_mm3 + " " + L.clash.mm3 + (c.t_s != null ? " · t " + c.t_s + " " + L.clash.s : "");
+    b.append(who, how);
+    b.addEventListener("click", () => {
+      if (c.t_s != null && api.cycle) api.cycle.setTime(c.t_s);
+      if (api.select) api.select(c.a, true);
+    });
+    list.appendChild(b);
+  }
+  head.addEventListener("click", () => { list.hidden = !list.hidden; });
+  box.append(head, list); document.body.appendChild(box);
+}
+initClearance();
+// The machine's app: the router publishes the released APK on the project page (public/apk/latest.json + the file, router publish_apk).
+// Its own row at the top of "Download files" (kit.mjs rebuilds its own row, not this one); no APK released -> nothing is shown.
+async function initApk() {
+  let a = null;
+  // 204 = the stack's answer for a project with no release; 404 on a plain static server. Both mean «no app».
+  try { const r = await fetch("apk/latest.json", { cache: "no-store" }); if (r.ok && r.status !== 204) a = await r.json(); } catch (e) { /* no app */ }
+  if (!a || !a.file) return;
+  const sec = $("secDl"), body = sec && sec.querySelector(".sb");
+  if (!body) return;
+  const row = document.createElement("div"); row.className = "row"; row.id = "apkRow";
+  const b = document.createElement("button"); b.id = "bApk"; b.textContent = L.apk.button;
+  b.title = fmt(L.apk.tip, { v: a.version });
+  b.addEventListener("click", () => { location.href = "apk/" + encodeURIComponent(a.file); });
+  const v = document.createElement("div"); v.className = "kitHint"; v.style.cssText = "flex-basis:100%;font-size:12px;color:var(--muted)"; v.textContent = fmt(L.apk.ver, { v: a.version });
+  row.append(b, v); body.prepend(row); sec.hidden = false;
+  api.apk = a;
+}
+initApk();
+// Flashing real boards through the viewer (Web Serial): only when config.json has `flash` (build.py --flash).
+async function initHw() {
+  while (!api.config && !api.error) await new Promise((r) => setTimeout(r, 50));
+  if (!api.config || !api.config.flash) return;
+  try { const mod = await import("/_viewer/hw.js"); await mod.mountHw({ api, L, cfg: api.config }); }
+  catch (err) { console.error(err); api.hwError = String(err && err.stack || err); }
+}
+initHw();
+
+try {
+  await load();
+  const home = homeView();
+  Object.assign(cam, { yaw: home.yaw, pitch: home.pitch, dist: home.dist, target: home.target });
+  ZOOM = [8, sceneSize * 3];
+  initTools();
+  EXP.add(ROOT);
+  renderLegend();
+  applyHash();
+  renderTree(true);
+  invalidate();
+  api.ready = true;
+  startEdges();
+} catch (err) {
+  console.error(err);
+  $("load").textContent = fmt(L.failed, { e: err && err.message ? err.message : err });
+  api.error = String(err);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

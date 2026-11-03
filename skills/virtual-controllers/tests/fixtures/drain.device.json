@@ -1,0 +1,6 @@
+{
+ "boards": [{"id": "master", "part": "esp32_a", "model": "esp32", "fw": "drain_master"}, {"id": "mcu", "part": "esp32_b", "model": "esp32", "fw": "drain_slave"}],
+ "elements": [{"id": "tft", "part": "tft", "model": "st7789", "board": "mcu", "params": {"w": 240, "h": 320},
+   "ports": {"SCL": {"board": "mcu", "pin": 18}, "SDA": {"board": "mcu", "pin": 23}, "DC": {"board": "mcu", "pin": 16}, "CS": {"board": "mcu", "pin": 5},
+             "RST": {"board": "mcu", "pin": 17}, "BLK": null, "VCC": {"rail": "vcc"}, "GND": {"rail": "gnd"}}}]
+}

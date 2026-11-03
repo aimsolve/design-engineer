@@ -1,0 +1,38 @@
+[project]
+name = "design-engineer"
+version = "0.3.0"
+description = "AI design engineer for Claude Code: build123d machine models, checks, and a local 3D viewer."
+readme = "README.md"
+license = "AGPL-3.0-only"
+requires-python = ">=3.12,<3.13"
+# The core: model a part, build it, check it, show it in the viewer. Versions as in the platform's worker image
+# (runner/images/cad.Dockerfile); build123d is pinned to what the projects run.
+dependencies = [
+    "build123d==0.13.0",
+    "bd_warehouse",
+    "numpy",
+    "scipy",
+    "trimesh",
+    "manifold3d",
+    "rtree",
+    "shapely",
+    "pillow",
+    "matplotlib",
+    "networkx",
+    "lxml",
+    "requests",
+    "python-fcl",
+]
+
+[project.optional-dependencies]
+sim = ["mujoco==3.14.0", "imageio", "imageio-ffmpeg", "coacd"]
+render = ["playwright"]
+fea = ["gmsh"]
+electronics = ["spicelib", "schemdraw", "control", "kiutils", "kicad-sch-api", "pymupdf", "kinparse"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-timeout", "playwright"]
+
+[tool.uv]
+# Not installed as a package: `local/bin/de` runs the code of its own plugin copy (PYTHONPATH), this file only pins the environment.
+package = false

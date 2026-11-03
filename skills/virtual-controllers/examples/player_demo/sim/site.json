@@ -1,0 +1,4 @@
+{
+ "device": "../build/model/device.json",
+ "fw": "../build/fw"
+}

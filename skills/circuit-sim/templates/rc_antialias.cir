@@ -1,0 +1,20 @@
+* Load-cell input filter in front of a delta-sigma ADC (ADS1220-style): differential + common-mode RC.
+* Replace every .param with the client's values (cite the schematic). ph=180 -> differential test,
+* ph=0 -> common-mode test (shows CM noise turning into differential error through the Ccm mismatch).
+* Probe: v(outp,outn) ; reference: v(srcp,srcn) for ph=180, v(srcp) for ph=0.
+.param R=1k Cdiff=100n Ccm=10n mis=0.1 Rbr=350 ph=180
+Vcm cm 0 DC 2.5
+Vp srcp cm DC 0 AC 0.5
+Vn srcn cm DC 0 AC 0.5 {ph}
+* bridge output resistance, half per side
+Rsp srcp inp {Rbr/2}
+Rsn srcn inn {Rbr/2}
+R1 inp outp {R}
+R2 inn outn {R}
+Cd outp outn {Cdiff}
+Cp outp 0 {Ccm}
+Cn outn 0 {Ccm*(1+mis)}
+* ADC input: high impedance (PGA)
+Rip outp 0 1G
+Rin outn 0 1G
+.end

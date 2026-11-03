@@ -1,0 +1,7 @@
+ESP-IDF esp_lcd (Espressif, Apache-2.0), tag v5.3.2 (commit 9d7f2d69f50d1288526d4f1027108e314e8c879f), files unchanged:
+  components/esp_lcd/include/{esp_lcd_panel_io,esp_lcd_panel_ops,esp_lcd_panel_vendor,esp_lcd_panel_dev,esp_lcd_panel_st7789,
+    esp_lcd_panel_ssd1306,esp_lcd_panel_nt35510,esp_lcd_types,esp_lcd_io_spi,esp_lcd_io_i2c,esp_lcd_io_i80,esp_lcd_panel_commands}.h
+  components/esp_lcd/interface/{esp_lcd_panel_interface,esp_lcd_panel_io_interface}.h
+  components/esp_lcd/src/{esp_lcd_panel_st7789,esp_lcd_panel_ops,esp_lcd_panel_io}.c
+The SPI panel IO (esp_lcd_new_panel_io_spi) is NOT vendored: shim/idf_vc.cpp implements it over the virtual SPI bus.
+The IDF headers these files include (esp_err.h, esp_log.h, driver/gpio.h, freertos/..., hal/...) are small stand-ins in shim/idf/.

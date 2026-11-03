@@ -1,0 +1,20 @@
+design-engineer
+Licensed under the GNU Affero General Public License v3.0 only (see LICENSE).
+
+This repository includes third-party code under its own licence, unchanged unless noted:
+
+- three.js r170 (three.module.min.js, GLTFLoader, BufferGeometryUtils) — MIT
+  skills/web-viewer/templates/assembly/vendor/ (LICENSE-three, VERSION.txt)
+- three.js r150 (minified build of the legacy single-file viewer) — MIT
+  skills/web-viewer/templates/viewer/ (see the licence file next to it)
+- Eclipse Layout Kernel (elk.bundled.js) — EPL-2.0
+  skills/machine-project/scripts/vendor/ (elk.LICENSE.md)
+- GyverBus 2.6.1, GyverStepper 2.7.3 (AlexGyver) — MIT
+  skills/virtual-controllers/lib/GyverBus, skills/virtual-controllers/lib/GyverStepper (LICENSE, VENDORED.txt)
+- HX711 0.6.5 (Rob Tillaart) — MIT
+  skills/virtual-controllers/lib/HX711 (LICENSE)
+- ESP-IDF esp_lcd headers v5.3.2 (Espressif Systems) — Apache-2.0
+  skills/virtual-controllers/lib/esp_lcd (LICENSE)
+
+Python dependencies (build123d, OCP/OpenCascade, numpy, …) are installed from PyPI by uv and keep their own licences
+(see uv.lock for the exact versions).

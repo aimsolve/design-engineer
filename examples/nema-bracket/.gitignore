@@ -1,0 +1,41 @@
+# machine-project standard. Source of truth = the model (aas/ mechanics/ electronics/ physics/ sim/ docs/ wiki/);
+# generated artifacts are exported on demand into build/ and never committed.
+# runtime (platform state)
+.engineer/
+.home/
+jobs/
+inbox/
+outbox/
+public/
+# generated
+build/
+out/
+frames/
+renders/
+preview/
+previews/
+preview_*/
+sim/out*/
+*.stl
+*.3mf
+*.dxf
+*.gcode
+*.glb
+*.mp4
+*.webm
+*.mov
+*.npz
+*.npy
+*.log
+# secrets / junk
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.pio/
+.DS_Store

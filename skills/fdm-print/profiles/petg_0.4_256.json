@@ -1,0 +1,6 @@
+{
+  "backend": "prusa-slicer",
+  "native_config": "/opt/design-engineer/skills/fdm-print/profiles/petg_0.4_256.ini",
+  "machine": {"name": "Generic 256 bed, 0.4 nozzle", "bed_size_mm": [256, 256], "z_height_mm": 256},
+  "filament": {"type": "PETG", "nozzle_temp_c": 240, "bed_temp_c": 80}
+}

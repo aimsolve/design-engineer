@@ -1,0 +1,15 @@
+{
+  "name": "design-engineer",
+  "owner": {
+    "name": "nkvch"
+  },
+  "plugins": [
+    {
+      "name": "design-engineer",
+      "source": "./",
+      "description": "An AI design engineer for any folder in Claude Code (`de init`); also the plugin of the hosted platform.",
+      "license": "AGPL-3.0-only"
+    }
+  ],
+  "description": "An AI design engineer for Claude Code: machine model, checks, local 3D viewer."
+}

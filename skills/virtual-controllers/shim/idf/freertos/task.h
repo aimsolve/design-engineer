@@ -1,0 +1,10 @@
+#pragma once
+#include "FreeRTOS.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+void vTaskDelay(TickType_t ticks);
+TickType_t xTaskGetTickCount(void);
+#ifdef __cplusplus
+}
+#endif

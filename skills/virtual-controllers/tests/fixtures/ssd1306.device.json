@@ -1,0 +1,39 @@
+{
+ "boards": [
+  {
+   "id": "mcu",
+   "part": "esp32_devkit",
+   "model": "esp32",
+   "fw": "ssd1306_wire"
+  }
+ ],
+ "elements": [
+  {
+   "id": "oled",
+   "part": "oled_128x64",
+   "model": "ssd1306",
+   "board": "mcu",
+   "params": {
+    "w": 128,
+    "h": 64,
+    "addr": 60
+   },
+   "ports": {
+    "SCL": {
+     "board": "mcu",
+     "pin": 22
+    },
+    "SDA": {
+     "board": "mcu",
+     "pin": 21
+    },
+    "VCC": {
+     "rail": "vcc"
+    },
+    "GND": {
+     "rail": "gnd"
+    }
+   }
+  }
+ ]
+}
